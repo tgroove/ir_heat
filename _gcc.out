@@ -1,0 +1,85 @@
+set -e; avr-gcc -MM -mmcu=atmega168 -I. -std=gnu99 -O0 -gstabs -Wa,-adhlns=ir_heat.lst -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums  -Wall -Wstrict-prototypes ir_heat.c \
+	| sed 's,\(.*\)\.o[ :]*,\1.o \1.d : ,g' > ir_heat.d; \
+	[ -s ir_heat.d ] || rm -f ir_heat.d
+
+-------- begin --------
+avr-gcc (WinAVR 20100110) 4.3.3
+Copyright (C) 2008 Free Software Foundation, Inc.
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+
+Size before:
+ir_heat.elf  :
+section     size      addr
+.data        136   8388864
+.text       7924         0
+.bss          96   8389000
+.stab       5940         0
+.stabstr    3620         0
+Total      17716
+
+
+
+
+Compiling: ir_heat.c
+avr-gcc -c -mmcu=atmega168 -I. -std=gnu99 -O0 -gstabs -Wa,-adhlns=ir_heat.lst -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums  -Wall -Wstrict-prototypes ir_heat.c -o ir_heat.o
+In file included from ir_heat.c:13:
+c:/winavr/lib/gcc/../../avr/include/avr\signal.h:36:2: warning: #warning "This header file is obsolete.  Use <avr/interrupt.h>."
+ir_heat.c: In function '__vector_9':
+ir_heat.c:91: warning: unused variable 'c'
+ir_heat.c: At top level:
+ir_heat.c:218: warning: function declaration isn't a prototype
+ir_heat.c:242: warning: function declaration isn't a prototype
+ir_heat.c: In function 'lookahead_temp':
+ir_heat.c:254: warning: unused variable 'i'
+ir_heat.c:252: warning: unused variable 'max'
+ir_heat.c: In function 'get_temperature':
+ir_heat.c:273: warning: implicit declaration of function 'i2c_rep_start'
+ir_heat.c:268: warning: unused variable 'pec_read'
+ir_heat.c: At top level:
+ir_heat.c:290: warning: function declaration isn't a prototype
+ir_heat.c: In function 'set_relais':
+ir_heat.c:290: warning: type of 'on' defaults to 'int'
+ir_heat.c: In function 'main':
+ir_heat.c:324: warning: large integer implicitly truncated to unsigned type
+
+Linking: ir_heat.elf
+avr-gcc -mmcu=atmega168 -I. -std=gnu99 -O0 -gstabs -Wa,-adhlns=ir_heat.o -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums  -Wall -Wstrict-prototypes ir_heat.o i2c_mstr.o  --output ir_heat.elf -Wl,-u,vfprintf -lprintf_flt  -lm -Wl,-Map=ir_heat.map -Wl,--cref
+
+Creating load file for Flash: ir_heat.hex
+avr-objcopy -O ihex -R .eeprom ir_heat.elf ir_heat.hex
+
+Creating load file for EEPROM: ir_heat.eep
+avr-objcopy -j .eeprom --set-section-flags=.eeprom="alloc,load" \
+	--change-section-lma .eeprom=0 -O ihex ir_heat.elf ir_heat.eep
+c:\winavr\bin\avr-objcopy.exe: --change-section-lma .eeprom=0x00000000 never used
+
+Creating Extended Listing: ir_heat.lss
+avr-objdump -h -S ir_heat.elf > ir_heat.lss
+
+Creating Symbol Table: ir_heat.sym
+avr-nm -n ir_heat.elf > ir_heat.sym
+
+Converting to AVR COFF: ir_heat.cof
+avr-objcopy --debugging --change-section-address .data-0x800000 --change-section-address .bss-0x800000 --change-section-address .noinit-0x800000 --change-section-address .eeprom-0x810000 -O coff-ext-avr ir_heat.elf ir_heat.cof   # Extended COFF. Supported in VMLAB from rel. 3.10
+c:\winavr\bin\avr-objcopy.exe: --change-section-vma .eeprom+0xff7f0000 never used
+c:\winavr\bin\avr-objcopy.exe: --change-section-lma .eeprom+0xff7f0000 never used
+c:\winavr\bin\avr-objcopy.exe: --change-section-vma .noinit+0xff800000 never used
+c:\winavr\bin\avr-objcopy.exe: --change-section-lma .noinit+0xff800000 never used
+
+Size after:
+ir_heat.elf  :
+section     size      addr
+.data        136   8388864
+.text       7924         0
+.bss          96   8389000
+.stab       5940         0
+.stabstr    3620         0
+Total      17716
+
+
+
+Errors: none
+-------- end --------
+
