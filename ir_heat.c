@@ -231,7 +231,7 @@ void add_value(uint16_t value) {
 	t_array[0]=t_array[1]=t_array[2]=t_array[3]=t_array[4]=t_array[5]=value;
 	}
 	else {
-		for(i=0;i<5;i++) {
+		for(i=0;i<=6;i++) {
 			t_array[i]=t_array[i+1];
 		}
 		t_array[5]=value;
@@ -241,10 +241,12 @@ void add_value(uint16_t value) {
 
 int8_t get_slope() {
 	int16_t s1, s2, s3;
-	s1=t_array[5]-t_array[0]; // 5 Teile
-	s2=t_array[4]-t_array[1]; // 3 Teile
-	s3=t_array[3]-t_array[2]; // 1 Teile
-	return (int8_t)((3*s1+5*s2+15*s3)/45);
+
+	s1 = t_array[5] - t_array[0];
+	s2 = t_array[4] - t_array[1];
+	s3 = t_array[3] - t_array[2];
+	
+	return (int8_t)((3*s1+5*s2+15*s3)/9);
 }
 
 
@@ -325,7 +327,7 @@ int main(void) {
 	PORTC = ~(1<<FLASH_LED);
 	PORTD = ~((1<<STATUS_LED1) | (1<<STATUS_LED2) | (1<<FLASH_LED));
 
-	 PRR != ~(1<<PRTWI);
+	PRR != ~(1<<PRTWI);
 
 	wdt_reset();
 	wdt_enable(WDTO_2S);
@@ -352,9 +354,12 @@ int main(void) {
 	set_relais(0);
 	mode = MODE_OFF;
 	
-	uint16_t temp;
+	uint16_t temp, temp_sum;
 	int16_t	lookahead;
-	int8_t slope;
+	int8_t 	slope;
+	uint8_t  last_interval = 0xff;
+	
+	temp_sum = 0;
 	
 	sei();
 
@@ -364,7 +369,9 @@ int main(void) {
    		interval=0;
    		//printf("Messen\n");
    		// Temperatur einlesen
-	      temp = get_temperature(ADR_T_OBJ1);
+//	      temp = get_temperature(ADR_T_OBJ1);
+			temp = temp_sum >> 3;
+			temp_sum = 0;
 	      //printf("Temp: %i\n", temp);
 	      if(temp==0) {
 	      // error!
@@ -375,7 +382,7 @@ int main(void) {
    	   	// Temperaturverlauf auswerten
    	   	add_value(temp);
    	   	//print_array();
-   	   	slope=get_slope();
+   	   	slope = (3*slope + get_slope())/4;
    	   	printf("slope: %i, ", slope);
 				lookahead=lookahead_temp(slope, 5);   	   	
    	   	printf("Prognose: %i\n", lookahead);
@@ -399,6 +406,12 @@ int main(void) {
 	   		}
    		}
 		}
+		else if(interval != last_interval) {
+   		last_interval = interval;
+   		temp_sum += get_temperature(ADR_T_OBJ1);
+   		//printf("Sum:%i\n", temp_sum);
+   	}
+
 		
 		switch(mode) {
 		case MODE_OFF:

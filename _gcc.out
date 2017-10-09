@@ -13,11 +13,11 @@ Size before:
 ir_heat.elf  :
 section     size      addr
 .data        136   8388864
-.text       7924         0
+.text       8040         0
 .bss          96   8389000
-.stab       5940         0
-.stabstr    3620         0
-Total      17716
+.stab       6036         0
+.stabstr    3655         0
+Total      17963
 
 
 
@@ -32,17 +32,17 @@ ir_heat.c: At top level:
 ir_heat.c:218: warning: function declaration isn't a prototype
 ir_heat.c:242: warning: function declaration isn't a prototype
 ir_heat.c: In function 'lookahead_temp':
-ir_heat.c:254: warning: unused variable 'i'
-ir_heat.c:252: warning: unused variable 'max'
+ir_heat.c:256: warning: unused variable 'i'
+ir_heat.c:254: warning: unused variable 'max'
 ir_heat.c: In function 'get_temperature':
-ir_heat.c:273: warning: implicit declaration of function 'i2c_rep_start'
-ir_heat.c:268: warning: unused variable 'pec_read'
+ir_heat.c:275: warning: implicit declaration of function 'i2c_rep_start'
+ir_heat.c:270: warning: unused variable 'pec_read'
 ir_heat.c: At top level:
-ir_heat.c:290: warning: function declaration isn't a prototype
+ir_heat.c:292: warning: function declaration isn't a prototype
 ir_heat.c: In function 'set_relais':
-ir_heat.c:290: warning: type of 'on' defaults to 'int'
+ir_heat.c:292: warning: type of 'on' defaults to 'int'
 ir_heat.c: In function 'main':
-ir_heat.c:324: warning: large integer implicitly truncated to unsigned type
+ir_heat.c:326: warning: large integer implicitly truncated to unsigned type
 
 Linking: ir_heat.elf
 avr-gcc -mmcu=atmega168 -I. -std=gnu99 -O0 -gstabs -Wa,-adhlns=ir_heat.o -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums  -Wall -Wstrict-prototypes ir_heat.o i2c_mstr.o  --output ir_heat.elf -Wl,-u,vfprintf -lprintf_flt  -lm -Wl,-Map=ir_heat.map -Wl,--cref
@@ -72,11 +72,11 @@ Size after:
 ir_heat.elf  :
 section     size      addr
 .data        136   8388864
-.text       7924         0
+.text       8056         0
 .bss          96   8389000
-.stab       5940         0
-.stabstr    3620         0
-Total      17716
+.stab       6036         0
+.stabstr    3655         0
+Total      17979
 
 
 
