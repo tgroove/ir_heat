@@ -12,12 +12,12 @@ warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 Size before:
 ir_heat.elf  :
 section     size      addr
-.data        136   8388864
-.text       8040         0
-.bss          96   8389000
-.stab       6036         0
-.stabstr    3655         0
-Total      17963
+.data        338   8388864
+.text       8462         0
+.bss          98   8389202
+.stab       6444         0
+.stabstr    3697         0
+Total      19039
 
 
 
@@ -27,22 +27,23 @@ avr-gcc -c -mmcu=atmega168 -I. -std=gnu99 -O0 -gstabs -Wa,-adhlns=ir_heat.lst -f
 In file included from ir_heat.c:13:
 c:/winavr/lib/gcc/../../avr/include/avr\signal.h:36:2: warning: #warning "This header file is obsolete.  Use <avr/interrupt.h>."
 ir_heat.c: In function '__vector_9':
-ir_heat.c:91: warning: unused variable 'c'
+ir_heat.c:92: warning: unused variable 'c'
 ir_heat.c: At top level:
-ir_heat.c:218: warning: function declaration isn't a prototype
-ir_heat.c:242: warning: function declaration isn't a prototype
+ir_heat.c:219: warning: function declaration isn't a prototype
+ir_heat.c:244: warning: function declaration isn't a prototype
 ir_heat.c: In function 'lookahead_temp':
-ir_heat.c:256: warning: unused variable 'i'
-ir_heat.c:254: warning: unused variable 'max'
+ir_heat.c:258: warning: unused variable 'i'
+ir_heat.c:256: warning: unused variable 'max'
 ir_heat.c: In function 'get_temperature':
-ir_heat.c:275: warning: implicit declaration of function 'i2c_rep_start'
-ir_heat.c:270: warning: unused variable 'pec_read'
+ir_heat.c:277: warning: implicit declaration of function 'i2c_rep_start'
+ir_heat.c:272: warning: unused variable 'pec_read'
 ir_heat.c: At top level:
-ir_heat.c:292: warning: function declaration isn't a prototype
+ir_heat.c:294: warning: function declaration isn't a prototype
 ir_heat.c: In function 'set_relais':
-ir_heat.c:292: warning: type of 'on' defaults to 'int'
+ir_heat.c:294: warning: type of 'on' defaults to 'int'
 ir_heat.c: In function 'main':
-ir_heat.c:326: warning: large integer implicitly truncated to unsigned type
+ir_heat.c:328: warning: large integer implicitly truncated to unsigned type
+ir_heat.c:416: warning: too many arguments for format
 
 Linking: ir_heat.elf
 avr-gcc -mmcu=atmega168 -I. -std=gnu99 -O0 -gstabs -Wa,-adhlns=ir_heat.o -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums  -Wall -Wstrict-prototypes ir_heat.o i2c_mstr.o  --output ir_heat.elf -Wl,-u,vfprintf -lprintf_flt  -lm -Wl,-Map=ir_heat.map -Wl,--cref
@@ -71,12 +72,12 @@ c:\winavr\bin\avr-objcopy.exe: --change-section-lma .noinit+0xff800000 never use
 Size after:
 ir_heat.elf  :
 section     size      addr
-.data        136   8388864
-.text       8056         0
-.bss          96   8389000
-.stab       6036         0
-.stabstr    3655         0
-Total      17979
+.data        338   8388864
+.text       8462         0
+.bss          98   8389202
+.stab       6444         0
+.stabstr    3697         0
+Total      19039
 
 
 

@@ -57,7 +57,7 @@
 #define STATUS_LED2_ON	PORTD |= (1<<STATUS_LED2)
 #define STATUS_LED2_OFF	PORTD &=~(1<<STATUS_LED2)
 
-#define OFF_COUNTER		20
+#define OFF_COUNTER		15
 
 #define	MODE_OFF			0
 #define	MODE_ON			1
@@ -75,9 +75,10 @@ volatile unsigned char r_in;            // RX buffer in index
 volatile unsigned char r_out;           // RX buffer out index
 
 uint8_t	interval;
-uint16_t t_array[6];
+int16_t t_array[6];
 uint8_t	off_counter = 0;
 uint8_t	mode;
+int16_t	slope2;
 
 uint16_t	t_la_threshold_up 	=  300;
 uint16_t	t_abs_threshold_up 	=  270;
@@ -116,7 +117,7 @@ SIGNAL(SIG_INTERRUPT0) {
 	sei();
 	
 	for(i=0;i<250;i++) if((PIND & (1<<SWITCH))) c++;
-	printf("INT0 %i\n", c);
+	//printf("INT0 %i\n", c);
 
 	if(c < 40) {
 		switch(mode) {
@@ -235,18 +236,19 @@ void add_value(uint16_t value) {
 			t_array[i]=t_array[i+1];
 		}
 		t_array[5]=value;
+		slope2 = (10*(t_array[5]-t_array[4]) + 19*slope2) / 20;
 	}
 }
 
 
-int8_t get_slope() {
+int16_t get_slope() {
 	int16_t s1, s2, s3;
 
 	s1 = t_array[5] - t_array[0];
 	s2 = t_array[4] - t_array[1];
 	s3 = t_array[3] - t_array[2];
 	
-	return (int8_t)((3*s1+5*s2+15*s3)/9);
+	return ((3*s1+5*s2+15*s3)/9);
 }
 
 
@@ -330,7 +332,7 @@ int main(void) {
 	PRR != ~(1<<PRTWI);
 
 	wdt_reset();
-	wdt_enable(WDTO_2S);
+	wdt_enable(WDTO_4S);
 	
 	UART_first_init();
 	i2c_init();
@@ -350,13 +352,15 @@ int main(void) {
 
 	STATUS_LED1_ON;
 	STATUS_LED2_OFF;
-	printf("\nStartup\n");
+	printf("\nStart\n");
 	set_relais(0);
 	mode = MODE_OFF;
 	
 	uint16_t temp, temp_sum;
 	int16_t	lookahead;
-	int8_t 	slope;
+	int16_t 	slope;
+	int16_t	slope_raw;
+	uint8_t	count=0;
 	uint8_t  last_interval = 0xff;
 	
 	temp_sum = 0;
@@ -364,13 +368,14 @@ int main(void) {
 	sei();
 
    while(1) {             // Infinite loop; define here the
-   	if(!(interval < 8)) {
+   	if(!(interval < 16)) {
    		wdt_reset();
    		interval=0;
+   		count=0;
    		//printf("Messen\n");
    		// Temperatur einlesen
 //	      temp = get_temperature(ADR_T_OBJ1);
-			temp = temp_sum >> 3;
+			temp = temp_sum >> 4;
 			temp_sum = 0;
 	      //printf("Temp: %i\n", temp);
 	      if(temp==0) {
@@ -382,13 +387,54 @@ int main(void) {
    	   	// Temperaturverlauf auswerten
    	   	add_value(temp);
    	   	//print_array();
-   	   	slope = (3*slope + get_slope())/4;
-   	   	printf("slope: %i, ", slope);
+   	   	slope_raw = get_slope();
+				//if(slope_raw<0) slope_raw = 0;
+   	   	slope = (15*slope + 10*slope_raw)/16;
+   	   	printf("slope_raw: %i, slope: %i, slope2: %i, ", slope_raw, slope, slope2);
 				lookahead=lookahead_temp(slope, 5);   	   	
-   	   	printf("Prognose: %i\n", lookahead);
+   	   	//printf("Prognose: %i\n", lookahead);
+   	   	printf("Ambient: %i\n", get_temperature(ADR_T_A));
 				
    	   	// Relais sperren, wenn ein Wert über dem Grenzwert
-	   	   if((lookahead > t_la_threshold_up) | (temp > t_abs_threshold_up)) off_counter = OFF_COUNTER+1;
+	   	   //if((lookahead > t_la_threshold_up) | (temp > t_abs_threshold_up)) off_counter = OFF_COUNTER+1;
+	   	
+	   		if(temp > 480) {
+	   			if(slope > 30) {
+	   				off_counter = OFF_COUNTER+1;
+	   				printf("Temperature Protect Rule 48, ");
+	   			}
+	   		}
+	   		else if(temp > 450) {
+	   			if(slope > 50) {
+	   				off_counter = OFF_COUNTER+1;
+	   				printf("Temperature Protect Rule 45, ");
+	   			}
+	   		}
+	   		else if(temp > 400) {
+	   			if(slope > 60) {
+	   				off_counter = OFF_COUNTER+1;
+	   				printf("Temperature Protect Rule 40, ", slope);
+	   			}
+	   		}
+	   		else if(temp > 350) {
+	   			if(slope > 80) {
+	   				off_counter = OFF_COUNTER+1;
+	   				printf("Temperature Protect Rule 35, ");
+               }
+	   		}
+	   		else if(temp > 300) {
+	   			if(slope > 120) {
+	   				off_counter = OFF_COUNTER+1;
+		   			printf("Temperature Protect Rule 30, ");
+		   		}
+	   		}
+	   		else {
+	   			if(slope > 160) {
+	   				off_counter = OFF_COUNTER+1;
+	   				printf("Temperature Protect General Rule, ");
+	   			}
+	   		}
+
    	   }
    		if(off_counter) {
   				off_counter--;
@@ -396,20 +442,27 @@ int main(void) {
   				//RELAIS_OFF;
 				//STATUS_LED1_OFF;
 				//STATUS_LED2_ON;
-				printf("Counter: %i; ", off_counter);
+				printf("Counter: %i; \n", off_counter);
    		}
    		else {
 	   	   if((lookahead < t_la_threshold_down) & (temp < t_abs_threshold_down)) {
 	   	   	// Relais wieder einschalten, wenn alle Temperaturen unter der unteren Schwelle
-	   	   	if(mode == MODE_TEMP_PROT) mode = MODE_ON;
+	   	   	//if(mode == MODE_TEMP_PROT) mode = MODE_ON;
 					//printf("ON\n");
+					if(mode == MODE_TEMP_PROT) mode = MODE_OFF;
 	   		}
    		}
 		}
 		else if(interval != last_interval) {
    		last_interval = interval;
-   		temp_sum += get_temperature(ADR_T_OBJ1);
-   		//printf("Sum:%i\n", temp_sum);
+   		uint16_t temp;
+   		if(count<16) {
+   			temp = get_temperature(ADR_T_OBJ1);
+	   		count++;
+   			// Messwerte für den Mittelwert aufsummieren
+   			temp_sum += temp;
+   			//printf("Raw: %i\n", temp);
+   		}
    	}
 
 		
@@ -423,13 +476,11 @@ int main(void) {
 			set_relais(1);
 			STATUS_LED1_ON;
 			STATUS_LED2_OFF;
-
 			break;
 		case MODE_TEMP_PROT:
 			set_relais(0);
 			STATUS_LED1_OFF;
 			STATUS_LED2_ON;
-
 			break;
 		default:
 			mode = MODE_OFF;
