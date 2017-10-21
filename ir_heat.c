@@ -38,8 +38,8 @@
 #define FLASH_LED		PC3
 #define STATUS_LED1	PD4
 #define STATUS_LED2	PD3
-#define RELAIS			PB7
-#define BUZZER			PB6
+#define RELAIS			PB6
+#define BUZZER			PB7
 #define SWITCH			PD2
 
 #define RELAIS_ON			PORTB |= (1<<RELAIS)
@@ -57,7 +57,7 @@
 #define STATUS_LED2_ON	PORTD |= (1<<STATUS_LED2)
 #define STATUS_LED2_OFF	PORTD &=~(1<<STATUS_LED2)
 
-#define OFF_COUNTER		15
+#define OFF_COUNTER		10
 
 #define	MODE_OFF			0
 #define	MODE_ON			1
@@ -74,7 +74,7 @@ volatile unsigned char t_out;           // TX buffer out index
 volatile unsigned char r_in;            // RX buffer in index
 volatile unsigned char r_out;           // RX buffer out index
 
-uint8_t	interval;
+int8_t	interval = -12;
 int16_t t_array[6];
 uint8_t	off_counter = 0;
 uint8_t	mode;
@@ -111,15 +111,23 @@ SIGNAL(SIG_OVERFLOW0) {
 
 
 SIGNAL(SIG_INTERRUPT0) {
+	static uint8_t running = 0;
+	
+	if(running){
+		printf("X");
+		return;
+	}
+	running = 1;
+	
 	uint8_t i;
 	uint8_t c=0;
 	EIMSK = 0;
 	sei();
-	
+	printf("In");
 	for(i=0;i<250;i++) if((PIND & (1<<SWITCH))) c++;
-	//printf("INT0 %i\n", c);
+	printf(" %i ", c);
 
-	if(c < 40) {
+	if(c < 100) {
 		switch(mode) {
 		case MODE_OFF:
 			if(off_counter) mode = MODE_TEMP_PROT;
@@ -133,7 +141,10 @@ SIGNAL(SIG_INTERRUPT0) {
 			mode = MODE_OFF;
 		}
 	}
+	printf("Out\n");
+	EIFR = (1<<INTF0);
 	EIMSK = (1<<INT0);
+	running = 0;
 }
 
 
@@ -332,7 +343,7 @@ int main(void) {
 	PRR != ~(1<<PRTWI);
 
 	wdt_reset();
-	wdt_enable(WDTO_4S);
+	wdt_enable(WDTO_8S);
 	
 	UART_first_init();
 	i2c_init();
@@ -364,6 +375,7 @@ int main(void) {
 	uint8_t  last_interval = 0xff;
 	
 	temp_sum = 0;
+	slope = -100;
 	
 	sei();
 
@@ -383,6 +395,10 @@ int main(void) {
 	      	printf("Error Temp=0");
 	      }
 	      else {
+				if (slope < 0) {
+					slope = 0;
+					temp = get_temperature(ADR_T_OBJ1);
+				}
    	   	printf("Temp: %i, ", temp);
    	   	// Temperaturverlauf auswerten
    	   	add_value(temp);
@@ -469,24 +485,25 @@ int main(void) {
 		switch(mode) {
 		case MODE_OFF:
 			set_relais(0);
-			STATUS_LED1_OFF;
-			STATUS_LED2_ON;
+			STATUS_LED1_ON;      // Grün
+			STATUS_LED2_OFF;
 			break;
 		case MODE_ON:
 			set_relais(1);
-			STATUS_LED1_ON;
-			STATUS_LED2_OFF;
+			STATUS_LED1_ON;     // Orange
+			STATUS_LED2_ON;
 			break;
 		case MODE_TEMP_PROT:
 			set_relais(0);
 			STATUS_LED1_OFF;
-			STATUS_LED2_ON;
+			STATUS_LED2_ON;      // Rot
 			break;
 		default:
 			mode = MODE_OFF;
 		}		
    }
 }
+
 
 
 

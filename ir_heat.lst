@@ -7,28 +7,32 @@
    7               	__zero_reg__ = 1
    9               		.text
   10               	.Ltext0:
-  86               	.global	off_counter
-  87               	.global	off_counter
-  88               		.section .bss
-  91               	off_counter:
-  92 0000 00        		.skip 1,0
-  93               	.global	t_la_threshold_up
-  94               		.data
-  97               	t_la_threshold_up:
-  98 0000 2C01      		.word	300
-  99               	.global	t_abs_threshold_up
- 102               	t_abs_threshold_up:
- 103 0002 0E01      		.word	270
- 104               	.global	t_la_threshold_down
- 107               	t_la_threshold_down:
- 108 0004 FA00      		.word	250
- 109               	.global	t_abs_threshold_down
- 112               	t_abs_threshold_down:
- 113 0006 FA00      		.word	250
- 114               		.lcomm c.1651,1
- 115               		.text
- 117               	.global	__vector_9
- 119               	__vector_9:
+  86               	.global	interval
+  87               		.data
+  90               	interval:
+  91 0000 F4        		.byte	-12
+  92               	.global	off_counter
+  93               	.global	off_counter
+  94               		.section .bss
+  97               	off_counter:
+  98 0000 00        		.skip 1,0
+  99               	.global	t_la_threshold_up
+ 100               		.data
+ 103               	t_la_threshold_up:
+ 104 0001 2C01      		.word	300
+ 105               	.global	t_abs_threshold_up
+ 108               	t_abs_threshold_up:
+ 109 0003 0E01      		.word	270
+ 110               	.global	t_la_threshold_down
+ 113               	t_la_threshold_down:
+ 114 0005 FA00      		.word	250
+ 115               	.global	t_abs_threshold_down
+ 118               	t_abs_threshold_down:
+ 119 0007 FA00      		.word	250
+ 120               		.lcomm c.1651,1
+ 121               		.text
+ 123               	.global	__vector_9
+ 125               	__vector_9:
    1:ir_heat.c     **** // ***********************************************************
    2:ir_heat.c     **** // Project:
    3:ir_heat.c     **** // Author:
@@ -69,8 +73,8 @@
   38:ir_heat.c     **** #define FLASH_LED		PC3
   39:ir_heat.c     **** #define STATUS_LED1	PD4
   40:ir_heat.c     **** #define STATUS_LED2	PD3
-  41:ir_heat.c     **** #define RELAIS			PB7
-  42:ir_heat.c     **** #define BUZZER			PB6
+  41:ir_heat.c     **** #define RELAIS			PB6
+  42:ir_heat.c     **** #define BUZZER			PB7
   43:ir_heat.c     **** #define SWITCH			PD2
   44:ir_heat.c     **** 
   45:ir_heat.c     **** #define RELAIS_ON			PORTB |= (1<<RELAIS)
@@ -88,7 +92,7 @@
   57:ir_heat.c     **** #define STATUS_LED2_ON	PORTD |= (1<<STATUS_LED2)
   58:ir_heat.c     **** #define STATUS_LED2_OFF	PORTD &=~(1<<STATUS_LED2)
   59:ir_heat.c     **** 
-  60:ir_heat.c     **** #define OFF_COUNTER		15
+  60:ir_heat.c     **** #define OFF_COUNTER		10
   61:ir_heat.c     **** 
   62:ir_heat.c     **** #define	MODE_OFF			0
   63:ir_heat.c     **** #define	MODE_ON			1
@@ -105,7 +109,7 @@
   74:ir_heat.c     **** volatile unsigned char r_in;            // RX buffer in index
   75:ir_heat.c     **** volatile unsigned char r_out;           // RX buffer out index
   76:ir_heat.c     **** 
-  77:ir_heat.c     **** uint8_t	interval;
+  77:ir_heat.c     **** int8_t	interval = -12;
   78:ir_heat.c     **** int16_t t_array[6];
   79:ir_heat.c     **** uint8_t	off_counter = 0;
   80:ir_heat.c     **** uint8_t	mode;
@@ -120,2506 +124,2626 @@
   89:ir_heat.c     **** 
   90:ir_heat.c     **** // Clock Timer
   91:ir_heat.c     **** SIGNAL(SIG_OVERFLOW2) {
- 120               	
- 121               	.LM0:
- 122               	.LFBB1:
- 123 0000 1F92      		push __zero_reg__
- 124 0002 0F92      		push r0
- 125 0004 0FB6      		in r0,__SREG__
- 126 0006 0F92      		push r0
- 127 0008 1124      		clr __zero_reg__
- 128 000a 8F93      		push r24
- 129 000c DF93      		push r29
- 130 000e CF93      		push r28
- 131 0010 CDB7      		in r28,__SP_L__
- 132 0012 DEB7      		in r29,__SP_H__
- 133               	/* prologue: Signal */
- 134               	/* frame size = 0 */
+ 126               	0:
+ 127               	.LFBB1:
+ 128               		push __zero_reg__
+ 129 0000 1F92      		push r0
+ 130 0002 0F92      		in r0,__SREG__
+ 131 0004 0FB6      		push r0
+ 132 0006 0F92      		clr __zero_reg__
+ 133 0008 1124      		push r24
+ 134 000a 8F93      		push r29
+ 135 000c DF93      		push r28
+ 136 000e CF93      		in r28,__SP_L__
+ 137 0010 CDB7      		in r29,__SP_H__
+ 138 0012 DEB7      	/* prologue: Signal */
+ 139               	/* frame size = 0 */
   92:ir_heat.c     **** 	static uint8_t c = 0;
   93:ir_heat.c     **** 	interval++;
- 135               	3,.LM1-.LFBB1
- 136               	.LM1:
- 137 0014 8091 0000 		lds r24,interval
- 138 0018 8F5F      		subi r24,lo8(-(1))
- 139 001a 8093 0000 		sts interval,r24
- 140               	/* epilogue start */
+ 141               	interval
+ 142               		subi r24,lo8(-(1))
+ 143 0014 8091 0000 		sts interval,r24
+ 144 0018 8F5F      	/* epilogue start */
+ 146               	.LM2:
   94:ir_heat.c     **** }
- 141               	n	68,0,94,.LM2-.LFBB1
- 142               	.LM2:
- 143 001e CF91      		pop r28
- 144 0020 DF91      		pop r29
- 145 0022 8F91      		pop r24
- 146 0024 0F90      		pop r0
- 147 0026 0FBE      		out __SREG__,r0
- 148 0028 0F90      		pop r0
- 149 002a 1F90      		pop __zero_reg__
- 150 002c 1895      		reti
- 155               	.Lscope1:
- 156               		.lcomm c.1659,1
- 158               	.global	__vector_16
- 160               	__vector_16:
+ 147               	28
+ 148               		pop r29
+ 149 001e CF91      		pop r24
+ 150 0020 DF91      		pop r0
+ 151 0022 8F91      		out __SREG__,r0
+ 152 0024 0F90      		pop r0
+ 153 0026 0FBE      		pop __zero_reg__
+ 154 0028 0F90      		reti
+ 159               	.Lscope1:
+ 160               		.lcomm c.1659,1
+ 162               	.global	__vector_16
+ 164               	__vector_16:
+ 166               	.LM3:
   95:ir_heat.c     **** 
   96:ir_heat.c     **** SIGNAL(SIG_OVERFLOW0) {
- 161               	-.LFBB2
- 162               	.LM3:
- 163               	.LFBB2:
- 164 002e 1F92      		push __zero_reg__
- 165 0030 0F92      		push r0
- 166 0032 0FB6      		in r0,__SREG__
- 167 0034 0F92      		push r0
- 168 0036 1124      		clr __zero_reg__
- 169 0038 2F93      		push r18
- 170 003a 3F93      		push r19
- 171 003c 4F93      		push r20
- 172 003e 5F93      		push r21
- 173 0040 8F93      		push r24
- 174 0042 9F93      		push r25
- 175 0044 AF93      		push r26
- 176 0046 BF93      		push r27
- 177 0048 EF93      		push r30
- 178 004a FF93      		push r31
- 179 004c DF93      		push r29
- 180 004e CF93      		push r28
- 181 0050 0F92      		push __tmp_reg__
- 182 0052 CDB7      		in r28,__SP_L__
- 183 0054 DEB7      		in r29,__SP_H__
- 184               	/* prologue: Signal */
- 185               	/* frame size = 1 */
+ 167               	_reg__
+ 168               		push r0
+ 169               		in r0,__SREG__
+ 170 002e 1F92      		push r0
+ 171 0030 0F92      		clr __zero_reg__
+ 172 0032 0FB6      		push r18
+ 173 0034 0F92      		push r19
+ 174 0036 1124      		push r20
+ 175 0038 2F93      		push r21
+ 176 003a 3F93      		push r24
+ 177 003c 4F93      		push r25
+ 178 003e 5F93      		push r26
+ 179 0040 8F93      		push r27
+ 180 0042 9F93      		push r30
+ 181 0044 AF93      		push r31
+ 182 0046 BF93      		push r29
+ 183 0048 EF93      		push r28
+ 184 004a FF93      		push __tmp_reg__
+ 185 004c DF93      		in r28,__SP_L__
+ 186 004e CF93      		in r29,__SP_H__
+ 187 0050 0F92      	/* prologue: Signal */
+ 188 0052 CDB7      	/* frame size = 1 */
+ 190               	.LM4:
+ 191               		std Y+1,__zero_reg__
   97:ir_heat.c     **** 	static uint8_t	c = 0;
   98:ir_heat.c     **** 	uint8_t slow=0;
- 186               	B2
- 187               	.LM4:
- 188 0056 1982      		std Y+1,__zero_reg__
+ 192               	BB2
+ 193               	.LM5:
+ 194 0056 1982      		lds r24,c.1659
   99:ir_heat.c     **** 	//if (off_counter < OFF_COUNTER-2) slow=1;
  100:ir_heat.c     **** 	c++;
- 189               	tabn	68,0,100,.LM5-.LFBB2
- 190               	.LM5:
- 191 0058 8091 0000 		lds r24,c.1659
- 192 005c 8F5F      		subi r24,lo8(-(1))
- 193 005e 8093 0000 		sts c.1659,r24
+ 195               	bi r24,lo8(-(1))
+ 196               		sts c.1659,r24
+ 198 005c 8F5F      	.LM6:
+ 199 005e 8093 0000 		lds r24,mode
  101:ir_heat.c     **** 	if (mode==MODE_TEMP_PROT) {
- 194               	bn	68,0,101,.LM6-.LFBB2
- 195               	.LM6:
- 196 0062 8091 0000 		lds r24,mode
- 197 0066 8330      		cpi r24,lo8(3)
- 198 0068 01F4      		brne .L4
+ 200               	r24,lo8(3)
+ 201               		brne .L4
+ 203 0066 8330      	.LM7:
+ 204 0068 01F4      		lds r24,c.1659
  102:ir_heat.c     **** 		if(c>(7<<slow)) {
- 199               	bn	68,0,102,.LM7-.LFBB2
- 200               	.LM7:
- 201 006a 8091 0000 		lds r24,c.1659
- 202 006e 482F      		mov r20,r24
- 203 0070 50E0      		ldi r21,lo8(0)
- 204 0072 8981      		ldd r24,Y+1
- 205 0074 282F      		mov r18,r24
- 206 0076 30E0      		ldi r19,lo8(0)
- 207 0078 87E0      		ldi r24,lo8(7)
- 208 007a 90E0      		ldi r25,hi8(7)
- 209 007c 022E      		mov r0,r18
- 210 007e 00C0      		rjmp 2f
- 211 0080 880F      	1:	lsl r24
- 212 0082 991F      		rol r25
- 213 0084 0A94      	2:	dec r0
- 214 0086 02F4      		brpl 1b
- 215 0088 8417      		cp r24,r20
- 216 008a 9507      		cpc r25,r21
- 217 008c 04F4      		brge .L4
+ 205               	r20,r24
+ 206               		ldi r21,lo8(0)
+ 207 006a 8091 0000 		ldd r24,Y+1
+ 208 006e 482F      		mov r18,r24
+ 209 0070 50E0      		ldi r19,lo8(0)
+ 210 0072 8981      		ldi r24,lo8(7)
+ 211 0074 282F      		ldi r25,hi8(7)
+ 212 0076 30E0      		mov r0,r18
+ 213 0078 87E0      		rjmp 2f
+ 214 007a 90E0      	1:	lsl r24
+ 215 007c 022E      		rol r25
+ 216 007e 00C0      	2:	dec r0
+ 217 0080 880F      		brpl 1b
+ 218 0082 991F      		cp r24,r20
+ 219 0084 0A94      		cpc r25,r21
+ 220 0086 02F4      		brge .L4
+ 222 008a 9507      	.LM8:
+ 223 008c 04F4      		ldi r26,lo8(40)
  103:ir_heat.c     **** 			FLASH_LED_ON;
- 218               	M8-.LFBB2
- 219               	.LM8:
- 220 008e A8E2      		ldi r26,lo8(40)
- 221 0090 B0E0      		ldi r27,hi8(40)
- 222 0092 E8E2      		ldi r30,lo8(40)
- 223 0094 F0E0      		ldi r31,hi8(40)
- 224 0096 8081      		ld r24,Z
- 225 0098 8860      		ori r24,lo8(8)
- 226 009a 8C93      		st X,r24
- 227               	.L4:
+ 224               	di r30,lo8(40)
+ 225               		ldi r31,hi8(40)
+ 226 008e A8E2      		ld r24,Z
+ 227 0090 B0E0      		ori r24,lo8(8)
+ 228 0092 E8E2      		st X,r24
+ 229 0094 F0E0      	.L4:
+ 231 0098 8860      	.LM9:
+ 232 009a 8C93      		lds r24,c.1659
+ 233               		mov r20,r24
  104:ir_heat.c     **** 		}
  105:ir_heat.c     **** 	}
  106:ir_heat.c     **** 	if(c>(15<<slow)) {
- 228               	,0,106,.LM9-.LFBB2
- 229               	.LM9:
- 230 009c 8091 0000 		lds r24,c.1659
- 231 00a0 482F      		mov r20,r24
- 232 00a2 50E0      		ldi r21,lo8(0)
- 233 00a4 8981      		ldd r24,Y+1
- 234 00a6 282F      		mov r18,r24
- 235 00a8 30E0      		ldi r19,lo8(0)
- 236 00aa 8FE0      		ldi r24,lo8(15)
- 237 00ac 90E0      		ldi r25,hi8(15)
- 238 00ae 022E      		mov r0,r18
- 239 00b0 00C0      		rjmp 2f
- 240 00b2 880F      	1:	lsl r24
- 241 00b4 991F      		rol r25
- 242 00b6 0A94      	2:	dec r0
- 243 00b8 02F4      		brpl 1b
- 244 00ba 8417      		cp r24,r20
- 245 00bc 9507      		cpc r25,r21
- 246 00be 04F4      		brge .L6
+ 234               	o8(0)
+ 235               		ldd r24,Y+1
+ 236 009c 8091 0000 		mov r18,r24
+ 237 00a0 482F      		ldi r19,lo8(0)
+ 238 00a2 50E0      		ldi r24,lo8(15)
+ 239 00a4 8981      		ldi r25,hi8(15)
+ 240 00a6 282F      		mov r0,r18
+ 241 00a8 30E0      		rjmp 2f
+ 242 00aa 8FE0      	1:	lsl r24
+ 243 00ac 90E0      		rol r25
+ 244 00ae 022E      	2:	dec r0
+ 245 00b0 00C0      		brpl 1b
+ 246 00b2 880F      		cp r24,r20
+ 247 00b4 991F      		cpc r25,r21
+ 248 00b6 0A94      		brge .L6
+ 250 00ba 8417      	.LM10:
+ 251 00bc 9507      		sts c.1659,__zero_reg__
  107:ir_heat.c     **** 		c=0;
- 247               	M10-.LFBB2
- 248               	.LM10:
- 249 00c0 1092 0000 		sts c.1659,__zero_reg__
+ 253               	(40)
+ 254               		ldi r27,hi8(40)
+ 255 00c0 1092 0000 		ldi r30,lo8(40)
  108:ir_heat.c     **** 		FLASH_LED_OFF;
- 250               	tabn	68,0,108,.LM11-.LFBB2
- 251               	.LM11:
- 252 00c4 A8E2      		ldi r26,lo8(40)
- 253 00c6 B0E0      		ldi r27,hi8(40)
- 254 00c8 E8E2      		ldi r30,lo8(40)
- 255 00ca F0E0      		ldi r31,hi8(40)
- 256 00cc 8081      		ld r24,Z
- 257 00ce 877F      		andi r24,lo8(-9)
- 258 00d0 8C93      		st X,r24
- 259               	.L6:
- 260               	/* epilogue start */
+ 256               	i r31,hi8(40)
+ 257               		ld r24,Z
+ 258 00c4 A8E2      		andi r24,lo8(-9)
+ 259 00c6 B0E0      		st X,r24
+ 260 00c8 E8E2      	.L6:
+ 261 00ca F0E0      	/* epilogue start */
+ 263 00ce 877F      	.LM12:
+ 264 00d0 8C93      		pop __tmp_reg__
+ 265               		pop r28
+ 266               		pop r29
  109:ir_heat.c     **** 	}
  110:ir_heat.c     **** }
- 261               	0,110,.LM12-.LFBB2
- 262               	.LM12:
- 263 00d2 0F90      		pop __tmp_reg__
- 264 00d4 CF91      		pop r28
- 265 00d6 DF91      		pop r29
- 266 00d8 FF91      		pop r31
- 267 00da EF91      		pop r30
- 268 00dc BF91      		pop r27
- 269 00de AF91      		pop r26
- 270 00e0 9F91      		pop r25
- 271 00e2 8F91      		pop r24
- 272 00e4 5F91      		pop r21
- 273 00e6 4F91      		pop r20
- 274 00e8 3F91      		pop r19
- 275 00ea 2F91      		pop r18
- 276 00ec 0F90      		pop r0
- 277 00ee 0FBE      		out __SREG__,r0
- 278 00f0 0F90      		pop r0
- 279 00f2 1F90      		pop __zero_reg__
- 280 00f4 1895      		reti
- 286               	.Lscope2:
- 288               	.global	__vector_1
- 290               	__vector_1:
+ 267               	op r30
+ 268               		pop r27
+ 269 00d2 0F90      		pop r26
+ 270 00d4 CF91      		pop r25
+ 271 00d6 DF91      		pop r24
+ 272 00d8 FF91      		pop r21
+ 273 00da EF91      		pop r20
+ 274 00dc BF91      		pop r19
+ 275 00de AF91      		pop r18
+ 276 00e0 9F91      		pop r0
+ 277 00e2 8F91      		out __SREG__,r0
+ 278 00e4 5F91      		pop r0
+ 279 00e6 4F91      		pop __zero_reg__
+ 280 00e8 3F91      		reti
+ 286 00f4 1895      	.Lscope2:
+ 287               		.lcomm running.1691,1
+ 288               		.data
+ 289               	.LC0:
+ 290               		.string	"In"
+ 291               	.LC1:
+ 292               		.string	" %i "
+ 293               	.LC2:
+ 294               		.string	"Out"
+ 295               		.text
+ 297               	.global	__vector_1
+ 299               	__vector_1:
+ 301               	.LM13:
+ 302               	.LFBB3:
+ 303               		push __zero_reg__
+ 304               		push r0
+ 305               		in r0,__SREG__
  111:ir_heat.c     **** 
  112:ir_heat.c     **** 
  113:ir_heat.c     **** SIGNAL(SIG_INTERRUPT0) {
- 291               	.LM13:
- 292               	.LFBB3:
- 293               		push __zero_reg__
- 294 00f6 1F92      		push r0
- 295 00f8 0F92      		in r0,__SREG__
- 296 00fa 0FB6      		push r0
- 297 00fc 0F92      		clr __zero_reg__
- 298 00fe 1124      		push r18
- 299 0100 2F93      		push r19
- 300 0102 3F93      		push r24
- 301 0104 8F93      		push r25
- 302 0106 9F93      		push r30
- 303 0108 EF93      		push r31
- 304 010a FF93      		push r29
- 305 010c DF93      		push r28
- 306 010e CF93      		rcall .
- 307 0110 00D0      		rcall .
- 308 0112 00D0      		in r28,__SP_L__
- 309 0114 CDB7      		in r29,__SP_H__
- 310 0116 DEB7      	/* prologue: Signal */
- 311               	/* frame size = 4 */
- 114:ir_heat.c     **** 	uint8_t i;
- 115:ir_heat.c     **** 	uint8_t c=0;
- 313               	_reg__
- 315 0118 1982      	.LM15:
- 116:ir_heat.c     **** 	EIMSK = 0;
- 316               	i r30,lo8(61)
- 317               		ldi r31,hi8(61)
- 318 011a EDE3      		st Z,__zero_reg__
- 320 011e 1082      	.LM16:
- 117:ir_heat.c     **** 	sei();
- 321               	PP */
- 322               	 ;  117 "ir_heat.c" 1
- 323               		sei
- 324               	 ;  0 "" 2
- 326               	.LM17:
- 118:ir_heat.c     **** 	
- 119:ir_heat.c     **** 	for(i=0;i<250;i++) if((PIND & (1<<SWITCH))) c++;
- 327               	APP */
- 328               		std Y+2,__zero_reg__
- 329               		rjmp .L8
- 330 0122 1A82      	.L10:
- 331 0124 00C0      		ldi r30,lo8(41)
- 332               		ldi r31,hi8(41)
- 333 0126 E9E2      		ld r24,Z
- 334 0128 F0E0      		mov r24,r24
- 335 012a 8081      		ldi r25,lo8(0)
- 336 012c 882F      		andi r24,lo8(4)
- 337 012e 90E0      		andi r25,hi8(4)
- 338 0130 8470      		sbiw r24,0
- 339 0132 9070      		breq .L9
- 340 0134 0097      		ldd r24,Y+1
- 341 0136 01F0      		subi r24,lo8(-(1))
- 342 0138 8981      		std Y+1,r24
- 343 013a 8F5F      	.L9:
- 344 013c 8983      		ldd r24,Y+2
- 345               		subi r24,lo8(-(1))
- 346 013e 8A81      		std Y+2,r24
- 347 0140 8F5F      	.L8:
- 348 0142 8A83      		ldd r24,Y+2
- 349               		cpi r24,lo8(-6)
- 350 0144 8A81      		brlo .L10
- 352 0148 00F0      	.LM18:
- 120:ir_heat.c     **** 	//printf("INT0 %i\n", c);
- 121:ir_heat.c     **** 
- 122:ir_heat.c     **** 	if(c < 40) {
- 353               	40)
- 354               		brsh .L11
- 356 014c 8832      	.LM19:
- 357 014e 00F4      		lds r24,mode
- 123:ir_heat.c     **** 		switch(mode) {
- 358               	r18,r24
- 359               		ldi r19,lo8(0)
- 360 0150 8091 0000 		std Y+4,r19
- 361 0154 282F      		std Y+3,r18
- 362 0156 30E0      		ldd r24,Y+3
- 363 0158 3C83      		ldd r25,Y+4
- 364 015a 2B83      		sbiw r24,0
- 365 015c 8B81      		breq .L13
- 366 015e 9C81      		ldd r18,Y+3
- 367 0160 0097      		ldd r19,Y+4
- 368 0162 01F0      		cpi r18,1
- 369 0164 2B81      		cpc r19,__zero_reg__
- 370 0166 3C81      		breq .L14
- 371 0168 2130      		rjmp .L18
- 372 016a 3105      	.L13:
- 374 016e 00C0      	.LM20:
- 375               		lds r24,off_counter
- 124:ir_heat.c     **** 		case MODE_OFF:
- 125:ir_heat.c     **** 			if(off_counter) mode = MODE_TEMP_PROT;
- 376               	5
- 377               		ldi r24,lo8(3)
- 378 0170 8091 0000 		sts mode,r24
- 379 0174 8823      		rjmp .L11
- 380 0176 01F0      	.L15:
- 382 017a 8093 0000 	.LM21:
- 383 017e 00C0      		ldi r24,lo8(1)
- 384               		sts mode,r24
- 126:ir_heat.c     **** 			else mode = MODE_ON;
- 385               	1
- 386               	.L14:
- 388 0182 8093 0000 	.LM22:
- 389 0186 00C0      		sts mode,__zero_reg__
- 390               		rjmp .L11
- 127:ir_heat.c     **** 			break;
- 128:ir_heat.c     **** 		case MODE_ON:
- 129:ir_heat.c     **** 			mode = MODE_OFF;
- 392               	.LM23:
- 393 0188 1092 0000 		sts mode,__zero_reg__
- 394 018c 00C0      	.L11:
- 130:ir_heat.c     **** 			break;
- 131:ir_heat.c     **** 		case MODE_TEMP_PROT:
- 132:ir_heat.c     **** 		default:
- 133:ir_heat.c     **** 			mode = MODE_OFF;
- 396               	:
- 397               		ldi r30,lo8(61)
- 398 018e 1092 0000 		ldi r31,hi8(61)
- 399               		ldi r24,lo8(1)
- 134:ir_heat.c     **** 		}
- 135:ir_heat.c     **** 	}
- 136:ir_heat.c     **** 	EIMSK = (1<<INT0);
- 400               	Z,r24
- 401               	/* epilogue start */
- 403 0194 F0E0      	.LM25:
- 404 0196 81E0      		pop __tmp_reg__
- 405 0198 8083      		pop __tmp_reg__
- 406               		pop __tmp_reg__
- 137:ir_heat.c     **** }
- 407               	tmp_reg__
- 408               		pop r28
- 409 019a 0F90      		pop r29
- 410 019c 0F90      		pop r31
- 411 019e 0F90      		pop r30
- 412 01a0 0F90      		pop r25
- 413 01a2 CF91      		pop r24
- 414 01a4 DF91      		pop r19
- 415 01a6 FF91      		pop r18
- 416 01a8 EF91      		pop r0
- 417 01aa 9F91      		out __SREG__,r0
- 418 01ac 8F91      		pop r0
- 419 01ae 3F91      		pop __zero_reg__
- 420 01b0 2F91      		reti
- 426               	.Lscope3:
- 428               	.global	__vector_18
- 430               	__vector_18:
- 432               	.LM26:
- 433               	.LFBB4:
- 434               		push __zero_reg__
- 435               		push r0
- 138:ir_heat.c     **** 
- 139:ir_heat.c     **** 
- 140:ir_heat.c     **** SIGNAL(SIG_USART_RECV) {
- 436               	 __zero_reg__
- 437               		push r24
- 438               		push r25
- 439 01bc 1F92      		push r30
- 440 01be 0F92      		push r31
- 441 01c0 0FB6      		push r29
- 442 01c2 0F92      		push r28
- 443 01c4 1124      		push __tmp_reg__
- 444 01c6 8F93      		in r28,__SP_L__
- 445 01c8 9F93      		in r29,__SP_H__
- 446 01ca EF93      	/* prologue: Signal */
- 447 01cc FF93      	/* frame size = 1 */
- 449 01d0 CF93      	.LM27:
- 450 01d2 0F92      		ldi r30,lo8(198)
- 451 01d4 CDB7      		ldi r31,hi8(198)
- 452 01d6 DEB7      		ld r24,Z
- 453               		std Y+1,r24
- 141:ir_heat.c     **** //******************
- 142:ir_heat.c     **** // RX interrupt handler
- 143:ir_heat.c     **** //
- 144:ir_heat.c     **** 	char c;	
- 145:ir_heat.c     **** 	c = UDR0;							// Get received char
- 455               	n
- 456               		mov r24,r24
- 457 01d8 E6EC      		ldi r25,lo8(0)
- 458 01da F0E0      		andi r24,lo8(31)
- 459 01dc 8081      		andi r25,hi8(31)
- 460 01de 8983      		movw r30,r24
- 146:ir_heat.c     **** 	rbuf[r_in & RMASK] = c;
- 461               	r30,lo8(-(rbuf))
- 462               		sbci r31,hi8(-(rbuf))
- 463 01e0 8091 0000 		ldd r24,Y+1
- 464 01e4 882F      		st Z,r24
- 466 01e8 8F71      	.LM29:
- 467 01ea 9070      		lds r24,r_in
- 468 01ec FC01      		subi r24,lo8(-(1))
- 469 01ee E050      		sts r_in,r24
- 470 01f0 F040      	/* epilogue start */
- 472 01f4 8083      	.LM30:
- 147:ir_heat.c     **** 	r_in++;
- 473               	eg__
- 474               		pop r28
- 475 01f6 8091 0000 		pop r29
- 476 01fa 8F5F      		pop r31
- 477 01fc 8093 0000 		pop r30
- 478               		pop r25
+ 306               	ush r19
+ 307               		push r20
+ 308               		push r21
+ 309 00f6 1F92      		push r22
+ 310 00f8 0F92      		push r23
+ 311 00fa 0FB6      		push r24
+ 312 00fc 0F92      		push r25
+ 313 00fe 1124      		push r26
+ 314 0100 2F93      		push r27
+ 315 0102 3F93      		push r30
+ 316 0104 4F93      		push r31
+ 317 0106 5F93      		push r29
+ 318 0108 6F93      		push r28
+ 319 010a 7F93      		rcall .
+ 320 010c 8F93      		rcall .
+ 321 010e 9F93      		in r28,__SP_L__
+ 322 0110 AF93      		in r29,__SP_H__
+ 323 0112 BF93      	/* prologue: Signal */
+ 324 0114 EF93      	/* frame size = 4 */
+ 326 0118 DF93      	.LM14:
+ 327 011a CF93      		lds r24,running.1691
+ 328 011c 00D0      		tst r24
+ 329 011e 00D0      		breq .L8
+ 331 0122 DEB7      	.LM15:
+ 332               		ldi r24,lo8(88)
+ 333               		ldi r25,hi8(88)
+ 114:ir_heat.c     **** 	static uint8_t running = 0;
+ 115:ir_heat.c     **** 	
+ 116:ir_heat.c     **** 	if(running){
+ 334               	:
+ 336 0124 8091 0000 	.LM16:
+ 337 0128 8823      		ldi r24,lo8(1)
+ 338 012a 01F0      		sts running.1691,r24
+ 117:ir_heat.c     **** 		printf("X");
+ 339               	bn	68,0,123,.LM17-.LFBB3
+ 340               	.LM17:
+ 341 012c 88E5      		std Y+1,__zero_reg__
+ 343 0130 0E94 0000 	.LM18:
+ 344 0134 00C0      		ldi r30,lo8(61)
+ 345               		ldi r31,hi8(61)
+ 118:ir_heat.c     **** 		return;
+ 119:ir_heat.c     **** 	}
+ 120:ir_heat.c     **** 	running = 1;
+ 346               	_zero_reg__
+ 348 0136 81E0      	.LM19:
+ 349 0138 8093 0000 	/* #APP */
+ 121:ir_heat.c     **** 	
+ 122:ir_heat.c     **** 	uint8_t i;
+ 123:ir_heat.c     **** 	uint8_t c=0;
+ 350               	125 "ir_heat.c" 1
+ 351               		sei
+ 352 013c 1982      	 ;  0 "" 2
+ 124:ir_heat.c     **** 	EIMSK = 0;
+ 353               	tabn	68,0,126,.LM20-.LFBB3
+ 354               	.LM20:
+ 355 013e EDE3      	/* #NOAPP */
+ 356 0140 F0E0      		rcall .
+ 357 0142 1082      		in r30,__SP_L__
+ 125:ir_heat.c     **** 	sei();
+ 358               	31,__SP_H__
+ 359               		adiw r30,1
+ 360               		ldi r24,lo8(.LC0)
+ 361               		ldi r25,hi8(.LC0)
+ 362 0144 7894      		std Z+1,r25
+ 363               		st Z,r24
+ 126:ir_heat.c     **** 	printf("In");
+ 364               	printf
+ 365               		pop __tmp_reg__
+ 366               		pop __tmp_reg__
+ 368 0148 EDB7      	.LM21:
+ 369 014a FEB7      		std Y+2,__zero_reg__
+ 370 014c 3196      		rjmp .L10
+ 371 014e 80E0      	.L12:
+ 372 0150 90E0      		ldi r30,lo8(41)
+ 373 0152 9183      		ldi r31,hi8(41)
+ 374 0154 8083      		ld r24,Z
+ 375 0156 0E94 0000 		mov r24,r24
+ 376 015a 0F90      		ldi r25,lo8(0)
+ 377 015c 0F90      		andi r24,lo8(4)
+ 127:ir_heat.c     **** 	for(i=0;i<250;i++) if((PIND & (1<<SWITCH))) c++;
+ 378               	4)
+ 379               		sbiw r24,0
+ 380 015e 1A82      		breq .L11
+ 381 0160 00C0      		ldd r24,Y+1
+ 382               		subi r24,lo8(-(1))
+ 383 0162 E9E2      		std Y+1,r24
+ 384 0164 F0E0      	.L11:
+ 385 0166 8081      		ldd r24,Y+2
+ 386 0168 882F      		subi r24,lo8(-(1))
+ 387 016a 90E0      		std Y+2,r24
+ 388 016c 8470      	.L10:
+ 389 016e 9070      		ldd r24,Y+2
+ 390 0170 0097      		cpi r24,lo8(-6)
+ 391 0172 01F0      		brlo .L12
+ 393 0176 8F5F      	.LM22:
+ 394 0178 8983      		ldd r24,Y+1
+ 395               		mov r18,r24
+ 396 017a 8A81      		ldi r19,lo8(0)
+ 397 017c 8F5F      		rcall .
+ 398 017e 8A83      		rcall .
+ 399               		in r30,__SP_L__
+ 400 0180 8A81      		in r31,__SP_H__
+ 401 0182 8A3F      		adiw r30,1
+ 402 0184 00F0      		ldi r24,lo8(.LC1)
+ 128:ir_heat.c     **** 	printf(" %i ", c);
+ 403               	+1,r25
+ 404               		st Z,r24
+ 405 0186 8981      		std Z+3,r19
+ 406 0188 282F      		std Z+2,r18
+ 407 018a 30E0      		call printf
+ 408 018c 00D0      		pop __tmp_reg__
+ 409 018e 00D0      		pop __tmp_reg__
+ 410 0190 EDB7      		pop __tmp_reg__
+ 411 0192 FEB7      		pop __tmp_reg__
+ 413 0196 80E0      	.LM23:
+ 414 0198 90E0      		ldd r24,Y+1
+ 415 019a 9183      		cpi r24,lo8(100)
+ 416 019c 8083      		brsh .L13
+ 418 01a0 2283      	.LM24:
+ 419 01a2 0E94 0000 		lds r24,mode
+ 420 01a6 0F90      		mov r18,r24
+ 421 01a8 0F90      		ldi r19,lo8(0)
+ 422 01aa 0F90      		std Y+4,r19
+ 423 01ac 0F90      		std Y+3,r18
+ 129:ir_heat.c     **** 
+ 130:ir_heat.c     **** 	if(c < 100) {
+ 424               	,Y+4
+ 425               		sbiw r24,0
+ 426 01ae 8981      		breq .L15
+ 427 01b0 8436      		ldd r18,Y+3
+ 428 01b2 00F4      		ldd r19,Y+4
+ 131:ir_heat.c     **** 		switch(mode) {
+ 429               	r18,1
+ 430               		cpc r19,__zero_reg__
+ 431 01b4 8091 0000 		breq .L16
+ 432 01b8 282F      		rjmp .L20
+ 433 01ba 30E0      	.L15:
+ 435 01be 2B83      	.LM25:
+ 436 01c0 8B81      		lds r24,off_counter
+ 437 01c2 9C81      		tst r24
+ 438 01c4 0097      		breq .L17
+ 439 01c6 01F0      		ldi r24,lo8(3)
+ 440 01c8 2B81      		sts mode,r24
+ 441 01ca 3C81      		rjmp .L13
+ 442 01cc 2130      	.L17:
+ 444 01d0 01F0      	.LM26:
+ 445 01d2 00C0      		ldi r24,lo8(1)
+ 446               		sts mode,r24
+ 132:ir_heat.c     **** 		case MODE_OFF:
+ 133:ir_heat.c     **** 			if(off_counter) mode = MODE_TEMP_PROT;
+ 448               	.LM27:
+ 449 01d4 8091 0000 		sts mode,__zero_reg__
+ 450 01d8 8823      		rjmp .L13
+ 451 01da 01F0      	.L20:
+ 453 01de 8093 0000 	.LM28:
+ 454 01e2 00C0      		sts mode,__zero_reg__
+ 455               	.L13:
+ 134:ir_heat.c     **** 			else mode = MODE_ON;
+ 456               	8,0,144,.LM29-.LFBB3
+ 457               	.LM29:
+ 458 01e4 81E0      		ldi r24,lo8(.LC2)
+ 459 01e6 8093 0000 		ldi r25,hi8(.LC2)
+ 460 01ea 00C0      		call puts
+ 135:ir_heat.c     **** 			break;
+ 136:ir_heat.c     **** 		case MODE_ON:
+ 137:ir_heat.c     **** 			mode = MODE_OFF;
+ 462               	
+ 463               		ldi r30,lo8(60)
+ 464 01ec 1092 0000 		ldi r31,hi8(60)
+ 465 01f0 00C0      		ldi r24,lo8(1)
+ 466               		st Z,r24
+ 138:ir_heat.c     **** 			break;
+ 139:ir_heat.c     **** 		case MODE_TEMP_PROT:
+ 140:ir_heat.c     **** 		default:
+ 141:ir_heat.c     **** 			mode = MODE_OFF;
+ 467               	abn	68,0,146,.LM31-.LFBB3
+ 468               	.LM31:
+ 469 01f2 1092 0000 		ldi r30,lo8(61)
+ 470               		ldi r31,hi8(61)
+ 142:ir_heat.c     **** 		}
+ 143:ir_heat.c     **** 	}
+ 144:ir_heat.c     **** 	printf("Out\n");
+ 471               	 r24,lo8(1)
+ 472               		st Z,r24
+ 474 01f8 90E0      	.LM32:
+ 475 01fa 0E94 0000 		sts running.1691,__zero_reg__
+ 145:ir_heat.c     **** 	EIFR = (1<<INTF0);
+ 476               	
+ 477               	/* epilogue start */
+ 479 0200 F0E0      	.LM33:
+ 480 0202 81E0      		pop __tmp_reg__
+ 481 0204 8083      		pop __tmp_reg__
+ 146:ir_heat.c     **** 	EIMSK = (1<<INT0);
+ 482               	__tmp_reg__
+ 483               		pop __tmp_reg__
+ 484 0206 EDE3      		pop r28
+ 485 0208 F0E0      		pop r29
+ 486 020a 81E0      		pop r31
+ 487 020c 8083      		pop r30
+ 147:ir_heat.c     **** 	running = 0;
+ 488               	27
+ 489               		pop r26
+ 490 020e 1092 0000 		pop r25
+ 491               		pop r24
+ 492               		pop r23
  148:ir_heat.c     **** }
- 479               	24
- 480               		pop r0
- 481 0200 0F90      		out __SREG__,r0
- 482 0202 CF91      		pop r0
- 483 0204 DF91      		pop __zero_reg__
- 484 0206 FF91      		reti
- 489 0210 0FBE      	.Lscope4:
- 491 0214 1F90      	.global	__vector_19
- 493               	__vector_19:
- 495               	.LM31:
- 496               	.LFBB5:
- 497               		push __zero_reg__
- 498               		push r0
- 499               		in r0,__SREG__
- 500               		push r0
- 501               		clr __zero_reg__
+ 493               	r22
+ 494               		pop r21
+ 495 0212 0F90      		pop r20
+ 496 0214 0F90      		pop r19
+ 497 0216 0F90      		pop r18
+ 498 0218 0F90      		pop r0
+ 499 021a CF91      		out __SREG__,r0
+ 500 021c DF91      		pop r0
+ 501 021e FF91      		pop __zero_reg__
+ 502 0220 EF91      		reti
+ 509 022e 5F91      	.Lscope3:
+ 511 0232 3F91      	.global	__vector_18
+ 513 0236 0F90      	__vector_18:
+ 515 023a 0F90      	.LM34:
+ 516 023c 1F90      	.LFBB4:
+ 517 023e 1895      		push __zero_reg__
+ 518               		push r0
+ 519               		in r0,__SREG__
+ 520               		push r0
+ 521               		clr __zero_reg__
+ 522               		push r24
+ 523               		push r25
+ 524               		push r30
+ 525               		push r31
+ 526               		push r29
+ 527               		push r28
+ 528               		push __tmp_reg__
  149:ir_heat.c     **** 
- 150:ir_heat.c     **** SIGNAL(SIG_USART_DATA) {
- 502               	sh r26
- 503               		push r27
- 504               		push r30
- 505 0218 1F92      		push r31
- 506 021a 0F92      		push r29
- 507 021c 0FB6      		push r28
- 508 021e 0F92      		in r28,__SP_L__
- 509 0220 1124      		in r29,__SP_H__
- 510 0222 8F93      	/* prologue: Signal */
- 511 0224 9F93      	/* frame size = 0 */
- 513 0228 BF93      	.LM32:
- 514 022a EF93      		lds r25,t_in
- 515 022c FF93      		lds r24,t_out
- 516 022e DF93      		cp r25,r24
- 517 0230 CF93      		breq .L22
- 519 0234 DEB7      	.LM33:
- 520               		ldi r26,lo8(198)
- 521               		ldi r27,hi8(198)
- 151:ir_heat.c     **** //*******************
- 152:ir_heat.c     **** // Data register empty interrupt handler.
- 153:ir_heat.c     **** // Indicates that next char can be transmitted
+ 150:ir_heat.c     **** 
+ 151:ir_heat.c     **** SIGNAL(SIG_USART_RECV) {
+ 529               	 prologue: Signal */
+ 530               	/* frame size = 1 */
+ 532 0240 1F92      	.LM35:
+ 533 0242 0F92      		ldi r30,lo8(198)
+ 534 0244 0FB6      		ldi r31,hi8(198)
+ 535 0246 0F92      		ld r24,Z
+ 536 0248 1124      		std Y+1,r24
+ 538 024c 9F93      	.LM36:
+ 539 024e EF93      		lds r24,r_in
+ 540 0250 FF93      		mov r24,r24
+ 541 0252 DF93      		ldi r25,lo8(0)
+ 542 0254 CF93      		andi r24,lo8(31)
+ 543 0256 0F92      		andi r25,hi8(31)
+ 544 0258 CDB7      		movw r30,r24
+ 545 025a DEB7      		subi r30,lo8(-(rbuf))
+ 546               		sbci r31,hi8(-(rbuf))
+ 547               		ldd r24,Y+1
+ 152:ir_heat.c     **** //******************
+ 153:ir_heat.c     **** // RX interrupt handler
  154:ir_heat.c     **** //
- 155:ir_heat.c     **** 	if(t_in != t_out) {
- 522               	r24,r24
- 523               		ldi r25,lo8(0)
- 524 0236 9091 0000 		andi r24,lo8(31)
- 525 023a 8091 0000 		andi r25,hi8(31)
- 526 023e 9817      		movw r30,r24
- 527 0240 01F0      		subi r30,lo8(-(tbuf))
- 156:ir_heat.c     **** 		UDR0 = tbuf[t_out & TMASK];
- 528               	r31,hi8(-(tbuf))
- 529               		ld r24,Z
- 530 0242 A6EC      		st X,r24
- 532 0246 8091 0000 	.LM34:
- 533 024a 882F      		lds r24,t_out
- 534 024c 90E0      		subi r24,lo8(-(1))
- 535 024e 8F71      		sts t_out,r24
- 536 0250 9070      		rjmp .L24
- 537 0252 FC01      	.L22:
- 539 0256 F040      	.LM35:
- 540 0258 8081      		ldi r26,lo8(193)
- 541 025a 8C93      		ldi r27,hi8(193)
- 157:ir_heat.c     **** 		t_out++;	
- 542               	93)
- 543               		ldi r31,hi8(193)
- 544 025c 8091 0000 		ld r24,Z
- 545 0260 8F5F      		andi r24,lo8(-33)
- 546 0262 8093 0000 		st X,r24
- 547 0266 00C0      	.L24:
- 548               	/* epilogue start */
- 158:ir_heat.c     **** 	}
- 159:ir_heat.c     **** 	else {
- 160:ir_heat.c     **** 		UCSR0B &= ~(1<<UDRIE0);
- 549               		68,0,162,.LM36-.LFBB5
- 550               	.LM36:
- 551 0268 A1EC      		pop r28
- 552 026a B0E0      		pop r29
- 553 026c E1EC      		pop r31
- 554 026e F0E0      		pop r30
- 555 0270 8081      		pop r27
- 556 0272 8F7D      		pop r26
- 557 0274 8C93      		pop r25
- 558               		pop r24
- 559               		pop r0
- 161:ir_heat.c     **** 	}
- 162:ir_heat.c     **** }
- 560               	__,r0
- 561               		pop r0
- 562 0276 CF91      		pop __zero_reg__
- 563 0278 DF91      		reti
- 565 027c EF91      	.Lscope5:
- 567 0280 AF91      	.global	tbuflen
- 569 0284 8F91      	tbuflen:
- 571 0288 0FBE      	.LM37:
- 572 028a 0F90      	.LFBB6:
- 573 028c 1F90      		push r29
- 574 028e 1895      		push r28
- 575               		in r28,__SP_L__
- 576               		in r29,__SP_H__
- 577               	/* prologue: function */
- 578               	/* frame size = 0 */
- 580               	.LM38:
- 163:ir_heat.c     **** 
- 164:ir_heat.c     **** char tbuflen(void) {
- 581               	4,t_out
- 582               		mov r18,r25
- 583               		sub r18,r24
- 584 0290 DF93      		mov r24,r18
- 585 0292 CF93      	/* epilogue start */
- 587 0296 DEB7      	.LM39:
- 588               		pop r28
- 589               		pop r29
- 165:ir_heat.c     **** //****************
- 166:ir_heat.c     **** // Retrieve pending chars in TX buffer
- 167:ir_heat.c     **** //
- 168:ir_heat.c     **** 	return(t_in - t_out);
- 590               	ze	tbuflen, .-tbuflen
- 591               	.Lscope6:
- 595 02a2 281B      	.global	UART_putchar
- 597               	UART_putchar:
- 169:ir_heat.c     **** }
- 598               	68,0,171,.LM40-.LFBB7
- 599               	.LM40:
- 600 02a6 CF91      	.LFBB7:
- 601 02a8 DF91      		push r29
- 602 02aa 0895      		push r28
- 603               		rcall .
- 604               		push __tmp_reg__
- 605               		in r28,__SP_L__
- 606               		in r29,__SP_H__
- 607               	/* prologue: function */
- 608               	/* frame size = 3 */
- 609               		std Y+1,r24
- 610               		std Y+3,r23
- 170:ir_heat.c     **** 
- 171:ir_heat.c     **** int UART_putchar(char c, FILE *stream) {
- 611               	.L28:
- 613               	.LM41:
- 614 02ac DF93      		call tbuflen
- 615 02ae CF93      		mov r18,r24
- 616 02b0 00D0      		ldi r19,lo8(0)
- 617 02b2 0F92      		ldi r24,lo8(32)
- 618 02b4 CDB7      		ldi r25,hi8(32)
- 619 02b6 DEB7      		sub r24,r18
- 620               		sbc r25,r19
- 621               		cpi r24,3
- 622 02b8 8983      		cpc r25,__zero_reg__
- 623 02ba 7B83      		brlt .L28
- 625               	.LM42:
- 172:ir_heat.c     **** //*********************
- 173:ir_heat.c     **** // Fills the transmit buffer, if it is full wait
- 174:ir_heat.c     **** //
- 175:ir_heat.c     **** 	while((TBUFSIZE - tbuflen()) <= 2);  // Wait...
- 626               	mov r24,r24
- 627               		ldi r25,lo8(0)
- 628 02be 0E94 0000 		andi r24,lo8(31)
- 629 02c2 282F      		andi r25,hi8(31)
- 630 02c4 30E0      		movw r30,r24
- 631 02c6 80E2      		subi r30,lo8(-(tbuf))
- 632 02c8 90E0      		sbci r31,hi8(-(tbuf))
- 633 02ca 821B      		ldd r24,Y+1
- 634 02cc 930B      		st Z,r24
- 636 02d0 9105      	.LM43:
- 637 02d2 04F0      		lds r24,t_in
- 176:ir_heat.c     **** 	
- 177:ir_heat.c     **** 	// Add data to the transmit buffer, enable TXCIE
- 178:ir_heat.c     **** 	//
- 179:ir_heat.c     **** 	tbuf[t_in & TMASK] = c;
- 638               	8(-(1))
- 639               		sts t_in,r24
- 641 02d8 882F      	.LM44:
- 642 02da 90E0      		ldi r26,lo8(193)
- 643 02dc 8F71      		ldi r27,hi8(193)
- 644 02de 9070      		ldi r30,lo8(193)
- 645 02e0 FC01      		ldi r31,hi8(193)
- 646 02e2 E050      		ld r24,Z
- 647 02e4 F040      		ori r24,lo8(32)
- 648 02e6 8981      		st X,r24
- 180:ir_heat.c     **** 	t_in++;	
- 650               	r24,lo8(0)
- 651               		ldi r25,hi8(0)
- 652 02ea 8091 0000 	/* epilogue start */
- 654 02f0 8093 0000 	.LM46:
- 181:ir_heat.c     **** 	UCSR0B |= (1<<UDRIE0);			// Enable UDR empty interrupt	
- 655               	__tmp_reg__
- 656               		pop __tmp_reg__
- 657 02f4 A1EC      		pop __tmp_reg__
- 658 02f6 B0E0      		pop r28
- 659 02f8 E1EC      		pop r29
- 660 02fa F0E0      		ret
- 662 02fe 8062      	.Lscope7:
- 182:ir_heat.c     **** 	return(0);
- 664               	buflen
- 666 0302 80E0      	rbuflen:
- 668               	.LM47:
- 183:ir_heat.c     **** }
- 669               	8:
- 670               		push r29
- 671 0306 0F90      		push r28
- 672 0308 0F90      		in r28,__SP_L__
- 673 030a 0F90      		in r29,__SP_H__
- 674 030c CF91      	/* prologue: function */
- 675 030e DF91      	/* frame size = 0 */
- 677               	.LM48:
- 678               		lds r25,r_in
- 679               		lds r24,r_out
- 680               		mov r18,r25
- 681               		sub r18,r24
- 682               		mov r24,r18
- 184:ir_heat.c     **** 
- 185:ir_heat.c     **** char rbuflen(void) {
- 683               	art */
- 685               	.LM49:
- 686 0312 DF93      		pop r28
- 687 0314 CF93      		pop r29
- 688 0316 CDB7      		ret
- 690               	.Lscope8:
- 186:ir_heat.c     **** // ***************
- 187:ir_heat.c     **** // Retrive pending chars in RX buffer
- 188:ir_heat.c     **** //
- 189:ir_heat.c     **** 	return(r_in - r_out);
- 692               	stream:p(0,16)",160,0,0,2
- 693               	.global	UART_getchar
- 695 031e 8091 0000 	UART_getchar:
- 697 0324 281B      	.LM50:
- 698 0326 822F      	.LFBB9:
- 699               		push r29
- 190:ir_heat.c     **** }
- 700               	8
- 701               		rcall .
- 702 0328 CF91      		push __tmp_reg__
- 703 032a DF91      		in r28,__SP_L__
- 704 032c 0895      		in r29,__SP_H__
- 705               	/* prologue: function */
- 706               	/* frame size = 3 */
- 707               		std Y+3,r25
- 708               		std Y+2,r24
- 709               	.L33:
- 711               	.LM51:
- 191:ir_heat.c     **** 
- 192:ir_heat.c     **** int UART_getchar(FILE *stream) {
- 712               	n
- 713               		tst r24
- 714               		breq .L33
- 716 0330 CF93      	.LM52:
- 717 0332 00D0      		lds r24,r_out
- 718 0334 0F92      		mov r24,r24
- 719 0336 CDB7      		ldi r25,lo8(0)
- 720 0338 DEB7      		andi r24,lo8(31)
- 721               		andi r25,hi8(31)
- 722               		movw r30,r24
- 723 033a 9B83      		subi r30,lo8(-(rbuf))
- 724 033c 8A83      		sbci r31,hi8(-(rbuf))
- 725               		ld r24,Z
- 193:ir_heat.c     **** //*******************
- 194:ir_heat.c     **** // Retieves character from UART. This function is to be passed
- 195:ir_heat.c     **** // to fdevopen
- 196:ir_heat.c     **** //
- 197:ir_heat.c     **** 	unsigned char c;
- 198:ir_heat.c     **** 	while(rbuflen() == 0);	  // Wait...
- 727               	.LM53:
- 728 033e 0E94 0000 		lds r24,r_out
- 729 0342 8823      		subi r24,lo8(-(1))
- 730 0344 01F0      		sts r_out,r24
- 199:ir_heat.c     **** 	c = rbuf[r_out & RMASK];
- 731               	bn	68,0,201,.LM54-.LFBB9
- 732               	.LM54:
- 733 0346 8091 0000 		ldd r24,Y+1
- 734 034a 882F      		mov r24,r24
- 735 034c 90E0      		ldi r25,lo8(0)
- 736 034e 8F71      	/* epilogue start */
- 738 0352 FC01      	.LM55:
- 739 0354 E050      		pop __tmp_reg__
- 740 0356 F040      		pop __tmp_reg__
- 741 0358 8081      		pop __tmp_reg__
- 742 035a 8983      		pop r28
- 200:ir_heat.c     **** 	r_out++;	
- 743               	t
- 201:ir_heat.c     **** 	return(c);
- 748               	pe9:
- 750 0366 8981      	.global	UART_first_init
- 752 036a 90E0      	UART_first_init:
- 202:ir_heat.c     **** }
- 754               	
- 755               	.LFBB10:
- 756 036c 0F90      		push r29
- 757 036e 0F90      		push r28
- 758 0370 0F90      		in r28,__SP_L__
- 759 0372 CF91      		in r29,__SP_H__
- 760 0374 DF91      	/* prologue: function */
- 761 0376 0895      	/* frame size = 0 */
- 763               	.LM57:
- 764               		ldi r30,lo8(196)
- 765               		ldi r31,hi8(196)
- 766               		ldi r24,lo8(12)
- 767               		ldi r25,hi8(12)
- 768               		std Z+1,r25
- 769               		st Z,r24
- 203:ir_heat.c     **** 
- 204:ir_heat.c     **** void UART_first_init(void) {
- 771               	lo8(193)
- 772               		ldi r31,hi8(193)
- 773               		ldi r24,lo8(-104)
- 774 0378 DF93      		st Z,r24
- 776 037c CDB7      	.LM59:
- 777 037e DEB7      		ldi r30,lo8(194)
- 778               		ldi r31,hi8(194)
- 779               		ldi r24,lo8(6)
- 205:ir_heat.c     **** //***********************
- 206:ir_heat.c     **** // The function fdevopen(..) must contain as parameters the
- 207:ir_heat.c     **** // corresponding  ..putchar() and  ..getchar() functions, defined before.
- 208:ir_heat.c     **** //
- 209:ir_heat.c     **** 	UBRR0 = 12;										 // 4800 BPS
- 780               	
- 782 0380 E4EC      	.LM60:
- 783 0382 F0E0      		ldi r24,lo8(gs(UART_putchar))
- 784 0384 8CE0      		ldi r25,hi8(gs(UART_putchar))
- 785 0386 90E0      		ldi r18,lo8(gs(UART_getchar))
- 786 0388 9183      		ldi r19,hi8(gs(UART_getchar))
- 787 038a 8083      		movw r22,r18
- 210:ir_heat.c     **** 	
- 211:ir_heat.c     **** 	UCSR0B = (1<<RXCIE0)|(1<<TXEN0)|(1<<RXEN0);	 // 8 Databits, receive and transmit enabled, receive 
- 788               	devopen
- 790 038c E1EC      	.LM61:
- 791 038e F0E0      	/* #APP */
- 792 0390 88E9      	 ;  215 "ir_heat.c" 1
- 793 0392 8083      		sei
- 212:ir_heat.c     **** 	UCSR0C = (1<<UCSZ01)|(1<<UCSZ00);
- 794               	"" 2
- 795               	/* epilogue start */
- 797 0396 F0E0      	.LM62:
- 798 0398 86E0      	/* #NOAPP */
- 799 039a 8083      		pop r28
- 213:ir_heat.c     **** 	
- 214:ir_heat.c     **** 	fdevopen(UART_putchar, UART_getchar);
- 800               	29
- 801               		ret
- 803 039e 90E0      	.Lscope10:
- 804 03a0 20E0      		.data
- 805 03a2 30E0      	.LC0:
- 806 03a4 B901      		.string	"Array:"
- 807 03a6 0E94 0000 	.LC1:
- 215:ir_heat.c     **** 	sei();											 // Global interrupt enable
- 808               		" %i"
- 809               		.text
- 811               	.global	print_array
- 813               	print_array:
- 216:ir_heat.c     **** }
- 815               	.LFBB11:
- 816               		push r29
- 817               		push r28
- 818 03ac CF91      		push __tmp_reg__
- 819 03ae DF91      		in r28,__SP_L__
- 820 03b0 0895      		in r29,__SP_H__
- 821               	/* prologue: function */
- 822               	/* frame size = 1 */
- 824               	.LM64:
- 825 0008 4172 7261 		rcall .
- 825      793A 00
- 826               		in r30,__SP_L__
- 827 000f 2025 6900 		in r31,__SP_H__
- 828               		adiw r30,1
- 829               		ldi r24,lo8(.LC0)
- 830               		ldi r25,hi8(.LC0)
- 831               		std Z+1,r25
- 832               		st Z,r24
- 217:ir_heat.c     **** 
- 218:ir_heat.c     **** 
- 219:ir_heat.c     **** void print_array(){
- 833               	__tmp_reg__
- 834               		pop __tmp_reg__
- 836 03b2 DF93      	.LM65:
- 837 03b4 CF93      		std Y+1,__zero_reg__
- 838 03b6 0F92      		rjmp .L38
- 839 03b8 CDB7      	.L39:
- 841               	.LM66:
- 842               		ldd r24,Y+1
- 220:ir_heat.c     **** 	uint8_t i;
- 221:ir_heat.c     ****   	printf("Array:");
- 843               	24
- 844               		ldi r25,lo8(0)
- 845 03bc 00D0      		lsl r24
- 846 03be EDB7      		rol r25
- 847 03c0 FEB7      		movw r30,r24
- 848 03c2 3196      		subi r30,lo8(-(t_array))
- 849 03c4 80E0      		sbci r31,hi8(-(t_array))
- 850 03c6 90E0      		ld r18,Z
- 851 03c8 9183      		ldd r19,Z+1
- 852 03ca 8083      		rcall .
- 853 03cc 0E94 0000 		rcall .
- 854 03d0 0F90      		in r30,__SP_L__
- 855 03d2 0F90      		in r31,__SP_H__
- 222:ir_heat.c     **** 	for(i=0;i<6;i++) {
- 856               	ldi r24,lo8(.LC1)
- 857               		ldi r25,hi8(.LC1)
- 858 03d4 1982      		std Z+1,r25
- 859 03d6 00C0      		st Z,r24
- 860               		std Z+3,r19
- 223:ir_heat.c     ****    	printf(" %i", t_array[i]);
- 861               	Z+2,r18
- 862               		call printf
- 863 03d8 8981      		pop __tmp_reg__
- 864 03da 882F      		pop __tmp_reg__
- 865 03dc 90E0      		pop __tmp_reg__
- 866 03de 880F      		pop __tmp_reg__
- 868 03e2 FC01      	.LM67:
- 869 03e4 E050      		ldd r24,Y+1
- 870 03e6 F040      		subi r24,lo8(-(1))
- 871 03e8 2081      		std Y+1,r24
- 872 03ea 3181      	.L38:
- 873 03ec 00D0      		ldd r24,Y+1
- 874 03ee 00D0      		cpi r24,lo8(6)
- 875 03f0 EDB7      		brlo .L39
- 877 03f4 3196      	.LM68:
- 878 03f6 80E0      		ldi r24,lo8(10)
- 879 03f8 90E0      		ldi r25,hi8(10)
- 880 03fa 9183      		call putchar
- 881 03fc 8083      	/* epilogue start */
- 883 0400 2283      	.LM69:
- 884 0402 0E94 0000 		pop __tmp_reg__
- 885 0406 0F90      		pop r28
- 886 0408 0F90      		pop r29
- 887 040a 0F90      		ret
- 892 0410 8F5F      	.Lscope11:
- 895 0414 8981      	.global	add_value
- 897 0418 00F0      	add_value:
- 224:ir_heat.c     **** 	}
- 225:ir_heat.c     ****   	printf("\n");
- 898               	
- 899               	.LFBB12:
- 900 041a 8AE0      		push r29
- 901 041c 90E0      		push r28
- 902 041e 0E94 0000 		rcall .
- 903               		push __tmp_reg__
- 226:ir_heat.c     **** }
- 904               	28,__SP_L__
- 905               		in r29,__SP_H__
- 906 0422 0F90      	/* prologue: function */
- 907 0424 CF91      	/* frame size = 3 */
- 908 0426 DF91      		std Y+3,r25
- 909 0428 0895      		std Y+2,r24
- 911               	.LM71:
- 912               		lds r24,t_array
- 913               		lds r25,(t_array)+1
- 914               		sbiw r24,0
- 915               		brne .L42
- 917               	.LM72:
- 918               		ldd r24,Y+2
- 919               		ldd r25,Y+3
- 227:ir_heat.c     **** 
+ 155:ir_heat.c     **** 	char c;	
+ 156:ir_heat.c     **** 	c = UDR0;							// Get received char
+ 548               	8,0,158,.LM37-.LFBB4
+ 549               	.LM37:
+ 550 025c E6EC      		lds r24,r_in
+ 551 025e F0E0      		subi r24,lo8(-(1))
+ 552 0260 8081      		sts r_in,r24
+ 553 0262 8983      	/* epilogue start */
+ 157:ir_heat.c     **** 	rbuf[r_in & RMASK] = c;
+ 554               	n	68,0,159,.LM38-.LFBB4
+ 555               	.LM38:
+ 556 0264 8091 0000 		pop __tmp_reg__
+ 557 0268 882F      		pop r28
+ 558 026a 90E0      		pop r29
+ 559 026c 8F71      		pop r31
+ 560 026e 9070      		pop r30
+ 561 0270 FC01      		pop r25
+ 562 0272 E050      		pop r24
+ 563 0274 F040      		pop r0
+ 564 0276 8981      		out __SREG__,r0
+ 565 0278 8083      		pop r0
+ 158:ir_heat.c     **** 	r_in++;
+ 566               	reg__
+ 567               		reti
+ 159:ir_heat.c     **** }
+ 572               	e4:
+ 574 0284 0F90      	.global	__vector_19
+ 576 0288 DF91      	__vector_19:
+ 578 028c EF91      	.LM39:
+ 579 028e 9F91      	.LFBB5:
+ 580 0290 8F91      		push __zero_reg__
+ 581 0292 0F90      		push r0
+ 582 0294 0FBE      		in r0,__SREG__
+ 583 0296 0F90      		push r0
+ 584 0298 1F90      		clr __zero_reg__
+ 585 029a 1895      		push r24
+ 586               		push r25
+ 587               		push r26
+ 588               		push r27
+ 589               		push r30
+ 590               		push r31
+ 591               		push r29
+ 592               		push r28
+ 593               		in r28,__SP_L__
+ 594               		in r29,__SP_H__
+ 160:ir_heat.c     **** 
+ 161:ir_heat.c     **** SIGNAL(SIG_USART_DATA) {
+ 595               	/* frame size = 0 */
+ 597               	.LM40:
+ 598 029c 1F92      		lds r25,t_in
+ 599 029e 0F92      		lds r24,t_out
+ 600 02a0 0FB6      		cp r25,r24
+ 601 02a2 0F92      		breq .L24
+ 603 02a6 8F93      	.LM41:
+ 604 02a8 9F93      		ldi r26,lo8(198)
+ 605 02aa AF93      		ldi r27,hi8(198)
+ 606 02ac BF93      		lds r24,t_out
+ 607 02ae EF93      		mov r24,r24
+ 608 02b0 FF93      		ldi r25,lo8(0)
+ 609 02b2 DF93      		andi r24,lo8(31)
+ 610 02b4 CF93      		andi r25,hi8(31)
+ 611 02b6 CDB7      		movw r30,r24
+ 612 02b8 DEB7      		subi r30,lo8(-(tbuf))
+ 613               		sbci r31,hi8(-(tbuf))
+ 614               		ld r24,Z
+ 162:ir_heat.c     **** //*******************
+ 163:ir_heat.c     **** // Data register empty interrupt handler.
+ 164:ir_heat.c     **** // Indicates that next char can be transmitted
+ 165:ir_heat.c     **** //
+ 166:ir_heat.c     **** 	if(t_in != t_out) {
+ 615               	,0,168,.LM42-.LFBB5
+ 616               	.LM42:
+ 617 02ba 9091 0000 		lds r24,t_out
+ 618 02be 8091 0000 		subi r24,lo8(-(1))
+ 619 02c2 9817      		sts t_out,r24
+ 620 02c4 01F0      		rjmp .L26
+ 167:ir_heat.c     **** 		UDR0 = tbuf[t_out & TMASK];
+ 622               	.LM43:
+ 623 02c6 A6EC      		ldi r26,lo8(193)
+ 624 02c8 B0E0      		ldi r27,hi8(193)
+ 625 02ca 8091 0000 		ldi r30,lo8(193)
+ 626 02ce 882F      		ldi r31,hi8(193)
+ 627 02d0 90E0      		ld r24,Z
+ 628 02d2 8F71      		andi r24,lo8(-33)
+ 629 02d4 9070      		st X,r24
+ 630 02d6 FC01      	.L26:
+ 631 02d8 E050      	/* epilogue start */
+ 633 02dc 8081      	.LM44:
+ 634 02de 8C93      		pop r28
+ 168:ir_heat.c     **** 		t_out++;	
+ 635               	r31
+ 636               		pop r30
+ 637 02e0 8091 0000 		pop r27
+ 638 02e4 8F5F      		pop r26
+ 639 02e6 8093 0000 		pop r25
+ 640 02ea 00C0      		pop r24
+ 641               		pop r0
+ 169:ir_heat.c     **** 	}
+ 170:ir_heat.c     **** 	else {
+ 171:ir_heat.c     **** 		UCSR0B &= ~(1<<UDRIE0);
+ 642               	SREG__,r0
+ 643               		pop r0
+ 644 02ec A1EC      		pop __zero_reg__
+ 645 02ee B0E0      		reti
+ 647 02f2 F0E0      	.Lscope5:
+ 649 02f6 8F7D      	.global	tbuflen
+ 651               	tbuflen:
+ 172:ir_heat.c     **** 	}
+ 173:ir_heat.c     **** }
+ 653               	B6:
+ 654               		push r29
+ 655 02fa CF91      		push r28
+ 656 02fc DF91      		in r28,__SP_L__
+ 657 02fe FF91      		in r29,__SP_H__
+ 658 0300 EF91      	/* prologue: function */
+ 659 0302 BF91      	/* frame size = 0 */
+ 661 0306 9F91      	.LM46:
+ 662 0308 8F91      		lds r25,t_in
+ 663 030a 0F90      		lds r24,t_out
+ 664 030c 0FBE      		mov r18,r25
+ 665 030e 0F90      		sub r18,r24
+ 666 0310 1F90      		mov r24,r18
+ 667 0312 1895      	/* epilogue start */
+ 669               	.LM47:
+ 670               		pop r28
+ 671               		pop r29
+ 672               		ret
+ 174:ir_heat.c     **** 
+ 175:ir_heat.c     **** char tbuflen(void) {
+ 674               	RT_putchar:F(0,1)",36,0,0,UART_putchar
+ 677 0314 DF93      	.global	UART_putchar
+ 679 0318 CDB7      	UART_putchar:
+ 681               	.LM48:
+ 682               	.LFBB7:
+ 176:ir_heat.c     **** //****************
+ 177:ir_heat.c     **** // Retrieve pending chars in TX buffer
+ 178:ir_heat.c     **** //
+ 179:ir_heat.c     **** 	return(t_in - t_out);
+ 683               	
+ 684               		push r28
+ 685 031c 9091 0000 		rcall .
+ 686 0320 8091 0000 		push __tmp_reg__
+ 687 0324 292F      		in r28,__SP_L__
+ 688 0326 281B      		in r29,__SP_H__
+ 689 0328 822F      	/* prologue: function */
+ 690               	/* frame size = 3 */
+ 180:ir_heat.c     **** }
+ 691               	1,r24
+ 692               		std Y+3,r23
+ 693 032a CF91      		std Y+2,r22
+ 694 032c DF91      	.L30:
+ 696               	.LM49:
+ 697               		call tbuflen
+ 698               		mov r18,r24
+ 699               		ldi r19,lo8(0)
+ 700               		ldi r24,lo8(32)
+ 701               		ldi r25,hi8(32)
+ 702               		sub r24,r18
+ 703               		sbc r25,r19
+ 181:ir_heat.c     **** 
+ 182:ir_heat.c     **** int UART_putchar(char c, FILE *stream) {
+ 704               	pc r25,__zero_reg__
+ 705               		brlt .L30
+ 707 0330 DF93      	.LM50:
+ 708 0332 CF93      		lds r24,t_in
+ 709 0334 00D0      		mov r24,r24
+ 710 0336 0F92      		ldi r25,lo8(0)
+ 711 0338 CDB7      		andi r24,lo8(31)
+ 712 033a DEB7      		andi r25,hi8(31)
+ 713               		movw r30,r24
+ 714               		subi r30,lo8(-(tbuf))
+ 715 033c 8983      		sbci r31,hi8(-(tbuf))
+ 716 033e 7B83      		ldd r24,Y+1
+ 717 0340 6A83      		st Z,r24
+ 183:ir_heat.c     **** //*********************
+ 184:ir_heat.c     **** // Fills the transmit buffer, if it is full wait
+ 185:ir_heat.c     **** //
+ 186:ir_heat.c     **** 	while((TBUFSIZE - tbuflen()) <= 2);  // Wait...
+ 719               	,t_in
+ 720               		subi r24,lo8(-(1))
+ 721 0342 0E94 0000 		sts t_in,r24
+ 723 0348 30E0      	.LM52:
+ 724 034a 80E2      		ldi r26,lo8(193)
+ 725 034c 90E0      		ldi r27,hi8(193)
+ 726 034e 821B      		ldi r30,lo8(193)
+ 727 0350 930B      		ldi r31,hi8(193)
+ 728 0352 8330      		ld r24,Z
+ 729 0354 9105      		ori r24,lo8(32)
+ 730 0356 04F0      		st X,r24
+ 187:ir_heat.c     **** 	
+ 188:ir_heat.c     **** 	// Add data to the transmit buffer, enable TXCIE
+ 189:ir_heat.c     **** 	//
+ 190:ir_heat.c     **** 	tbuf[t_in & TMASK] = c;
+ 731               	,193,.LM53-.LFBB7
+ 732               	.LM53:
+ 733 0358 8091 0000 		ldi r24,lo8(0)
+ 734 035c 882F      		ldi r25,hi8(0)
+ 735 035e 90E0      	/* epilogue start */
+ 737 0362 9070      	.LM54:
+ 738 0364 FC01      		pop __tmp_reg__
+ 739 0366 E050      		pop __tmp_reg__
+ 740 0368 F040      		pop __tmp_reg__
+ 741 036a 8981      		pop r28
+ 742 036c 8083      		pop r29
+ 191:ir_heat.c     **** 	t_in++;	
+ 743               	UART_putchar, .-UART_putchar
+ 744               	.Lscope7:
+ 746 0372 8F5F      	.global	rbuflen
+ 192:ir_heat.c     **** 	UCSR0B |= (1<<UDRIE0);			// Enable UDR empty interrupt	
+ 748               	en:
+ 750 0378 A1EC      	.LM55:
+ 751 037a B0E0      	.LFBB8:
+ 752 037c E1EC      		push r29
+ 753 037e F0E0      		push r28
+ 754 0380 8081      		in r28,__SP_L__
+ 755 0382 8062      		in r29,__SP_H__
+ 756 0384 8C93      	/* prologue: function */
+ 193:ir_heat.c     **** 	return(0);
+ 757               	size = 0 */
+ 759 0386 80E0      	.LM56:
+ 760 0388 90E0      		lds r25,r_in
+ 761               		lds r24,r_out
+ 194:ir_heat.c     **** }
+ 762               	r18,r25
+ 763               		sub r18,r24
+ 764 038a 0F90      		mov r24,r18
+ 765 038c 0F90      	/* epilogue start */
+ 767 0390 CF91      	.LM57:
+ 768 0392 DF91      		pop r28
+ 769 0394 0895      		pop r29
+ 770               		ret
+ 772               	.Lscope8:
+ 775               	.global	UART_getchar
+ 195:ir_heat.c     **** 
+ 196:ir_heat.c     **** char rbuflen(void) {
+ 776               	tchar, @function
+ 777               	UART_getchar:
+ 779 0396 DF93      	.LM58:
+ 780 0398 CF93      	.LFBB9:
+ 781 039a CDB7      		push r29
+ 782 039c DEB7      		push r28
+ 783               		rcall .
+ 784               		push __tmp_reg__
+ 197:ir_heat.c     **** // ***************
+ 198:ir_heat.c     **** // Retrive pending chars in RX buffer
+ 199:ir_heat.c     **** //
+ 200:ir_heat.c     **** 	return(r_in - r_out);
+ 785               	_SP_L__
+ 786               		in r29,__SP_H__
+ 787 039e 9091 0000 	/* prologue: function */
+ 788 03a2 8091 0000 	/* frame size = 3 */
+ 789 03a6 292F      		std Y+3,r25
+ 790 03a8 281B      		std Y+2,r24
+ 791 03aa 822F      	.L35:
+ 201:ir_heat.c     **** }
+ 793               	call rbuflen
+ 794               		tst r24
+ 795 03ac CF91      		breq .L35
+ 797 03b0 0895      	.LM60:
+ 798               		lds r24,r_out
+ 799               		mov r24,r24
+ 800               		ldi r25,lo8(0)
+ 801               		andi r24,lo8(31)
+ 802               		andi r25,hi8(31)
+ 803               		movw r30,r24
+ 804               		subi r30,lo8(-(rbuf))
+ 202:ir_heat.c     **** 
+ 203:ir_heat.c     **** int UART_getchar(FILE *stream) {
+ 805               	8(-(rbuf))
+ 806               		ld r24,Z
+ 807               		std Y+1,r24
+ 809 03b4 CF93      	.LM61:
+ 810 03b6 00D0      		lds r24,r_out
+ 811 03b8 0F92      		subi r24,lo8(-(1))
+ 812 03ba CDB7      		sts r_out,r24
+ 814               	.LM62:
+ 815               		ldd r24,Y+1
+ 816 03be 9B83      		mov r24,r24
+ 817 03c0 8A83      		ldi r25,lo8(0)
+ 818               	/* epilogue start */
+ 204:ir_heat.c     **** //*******************
+ 205:ir_heat.c     **** // Retieves character from UART. This function is to be passed
+ 206:ir_heat.c     **** // to fdevopen
+ 207:ir_heat.c     **** //
+ 208:ir_heat.c     **** 	unsigned char c;
+ 209:ir_heat.c     **** 	while(rbuflen() == 0);	  // Wait...
+ 819               	13,.LM63-.LFBB9
+ 820               	.LM63:
+ 821 03c2 0E94 0000 		pop __tmp_reg__
+ 822 03c6 8823      		pop __tmp_reg__
+ 823 03c8 01F0      		pop __tmp_reg__
+ 210:ir_heat.c     **** 	c = rbuf[r_out & RMASK];
+ 824               	r28
+ 825               		pop r29
+ 826 03ca 8091 0000 		ret
+ 831 03d6 FC01      	.Lscope9:
+ 833 03da F040      	.global	UART_first_init
+ 835 03de 8983      	UART_first_init:
+ 211:ir_heat.c     **** 	r_out++;	
+ 836               	,215,.LM64-.LFBB10
+ 837               	.LM64:
+ 838 03e0 8091 0000 	.LFBB10:
+ 839 03e4 8F5F      		push r29
+ 840 03e6 8093 0000 		push r28
+ 212:ir_heat.c     **** 	return(c);
+ 841               	28,__SP_L__
+ 842               		in r29,__SP_H__
+ 843 03ea 8981      	/* prologue: function */
+ 844 03ec 882F      	/* frame size = 0 */
+ 846               	.LM65:
+ 213:ir_heat.c     **** }
+ 847               	30,lo8(196)
+ 848               		ldi r31,hi8(196)
+ 849 03f0 0F90      		ldi r24,lo8(12)
+ 850 03f2 0F90      		ldi r25,hi8(12)
+ 851 03f4 0F90      		std Z+1,r25
+ 852 03f6 CF91      		st Z,r24
+ 854 03fa 0895      	.LM66:
+ 855               		ldi r30,lo8(193)
+ 856               		ldi r31,hi8(193)
+ 857               		ldi r24,lo8(-104)
+ 858               		st Z,r24
+ 860               	.LM67:
+ 861               		ldi r30,lo8(194)
+ 862               		ldi r31,hi8(194)
+ 863               		ldi r24,lo8(6)
+ 214:ir_heat.c     **** 
+ 215:ir_heat.c     **** void UART_first_init(void) {
+ 864               		68,0,225,.LM68-.LFBB10
+ 865               	.LM68:
+ 866               		ldi r24,lo8(gs(UART_putchar))
+ 867 03fc DF93      		ldi r25,hi8(gs(UART_putchar))
+ 868 03fe CF93      		ldi r18,lo8(gs(UART_getchar))
+ 869 0400 CDB7      		ldi r19,hi8(gs(UART_getchar))
+ 870 0402 DEB7      		movw r22,r18
+ 871               		call fdevopen
+ 216:ir_heat.c     **** //***********************
+ 217:ir_heat.c     **** // The function fdevopen(..) must contain as parameters the
+ 218:ir_heat.c     **** // corresponding  ..putchar() and  ..getchar() functions, defined before.
+ 219:ir_heat.c     **** //
+ 220:ir_heat.c     **** 	UBRR0 = 12;										 // 4800 BPS
+ 873               	 #APP */
+ 874               	 ;  226 "ir_heat.c" 1
+ 875 0404 E4EC      		sei
+ 876 0406 F0E0      	 ;  0 "" 2
+ 877 0408 8CE0      	/* epilogue start */
+ 879 040c 9183      	.LM70:
+ 880 040e 8083      	/* #NOAPP */
+ 221:ir_heat.c     **** 	
+ 222:ir_heat.c     **** 	UCSR0B = (1<<RXCIE0)|(1<<TXEN0)|(1<<RXEN0);	 // 8 Databits, receive and transmit enabled, receive 
+ 881               	
+ 882               		pop r29
+ 883 0410 E1EC      		ret
+ 885 0414 88E9      	.Lscope10:
+ 886 0416 8083      		.data
+ 223:ir_heat.c     **** 	UCSR0C = (1<<UCSZ01)|(1<<UCSZ00);
+ 887               	
+ 888               		.string	"Array:"
+ 889 0418 E2EC      	.LC4:
+ 890 041a F0E0      		.string	" %i"
+ 891 041c 86E0      		.text
+ 224:ir_heat.c     **** 	
+ 225:ir_heat.c     **** 	fdevopen(UART_putchar, UART_getchar);
+ 893               	al	print_array
+ 895 0420 80E0      	print_array:
+ 897 0424 20E0      	.LM71:
+ 898 0426 30E0      	.LFBB11:
+ 899 0428 B901      		push r29
+ 900 042a 0E94 0000 		push r28
+ 226:ir_heat.c     **** 	sei();											 // Global interrupt enable
+ 901               	tmp_reg__
+ 902               		in r28,__SP_L__
+ 903               		in r29,__SP_H__
+ 904               	/* prologue: function */
+ 905 042e 7894      	/* frame size = 1 */
+ 907               	.LM72:
+ 227:ir_heat.c     **** }
+ 908               	.
+ 909               		in r30,__SP_L__
+ 910               		in r31,__SP_H__
+ 911 0430 CF91      		adiw r30,1
+ 912 0432 DF91      		ldi r24,lo8(.LC3)
+ 913 0434 0895      		ldi r25,hi8(.LC3)
+ 914               		std Z+1,r25
+ 915               		st Z,r24
+ 916               		call printf
+ 917               		pop __tmp_reg__
+ 918 0015 4172 7261 		pop __tmp_reg__
+ 918      793A 00
+ 920 001c 2025 6900 	.LM73:
+ 921               		std Y+1,__zero_reg__
+ 922               		rjmp .L40
+ 923               	.L41:
+ 925               	.LM74:
  228:ir_heat.c     **** 
- 229:ir_heat.c     **** void add_value(uint16_t value) {
- 920               	)+1,r25
- 921               		sts t_array+10,r24
- 922               		lds r24,t_array+10
- 923 042a DF93      		lds r25,(t_array+10)+1
- 924 042c CF93      		sts (t_array+8)+1,r25
- 925 042e 00D0      		sts t_array+8,r24
- 926 0430 0F92      		lds r24,t_array+8
- 927 0432 CDB7      		lds r25,(t_array+8)+1
- 928 0434 DEB7      		sts (t_array+6)+1,r25
- 929               		sts t_array+6,r24
- 930               		lds r24,t_array+6
- 931 0436 9B83      		lds r25,(t_array+6)+1
- 932 0438 8A83      		sts (t_array+4)+1,r25
- 230:ir_heat.c     **** 	uint8_t i;
- 231:ir_heat.c     **** 	if(t_array[0]==0) {
- 933               	4,r24
- 934               		lds r24,t_array+4
- 935 043a 8091 0000 		lds r25,(t_array+4)+1
- 936 043e 9091 0000 		sts (t_array+2)+1,r25
- 937 0442 0097      		sts t_array+2,r24
- 938 0444 01F4      		lds r24,t_array+2
- 232:ir_heat.c     **** 	t_array[0]=t_array[1]=t_array[2]=t_array[3]=t_array[4]=t_array[5]=value;
- 939               	25,(t_array+2)+1
- 940               		sts (t_array)+1,r25
- 941 0446 8A81      		sts t_array,r24
- 942 0448 9B81      		rjmp .L46
- 943 044a 9093 0000 	.L42:
- 945 0452 8091 0000 	.LM73:
- 946 0456 9091 0000 		std Y+1,__zero_reg__
- 947 045a 9093 0000 		rjmp .L44
- 948 045e 8093 0000 	.L45:
- 950 0466 9091 0000 	.LM74:
- 951 046a 9093 0000 		ldd r24,Y+1
- 952 046e 8093 0000 		mov r20,r24
- 953 0472 8091 0000 		ldi r21,lo8(0)
- 954 0476 9091 0000 		ldd r24,Y+1
- 955 047a 9093 0000 		mov r24,r24
- 956 047e 8093 0000 		ldi r25,lo8(0)
- 957 0482 8091 0000 		adiw r24,1
- 958 0486 9091 0000 		lsl r24
- 959 048a 9093 0000 		rol r25
- 960 048e 8093 0000 		movw r30,r24
- 961 0492 8091 0000 		subi r30,lo8(-(t_array))
- 962 0496 9091 0000 		sbci r31,hi8(-(t_array))
- 963 049a 9093 0000 		ld r18,Z
- 964 049e 8093 0000 		ldd r19,Z+1
- 965 04a2 00C0      		movw r24,r20
- 966               		lsl r24
- 233:ir_heat.c     **** 	}
- 234:ir_heat.c     **** 	else {
- 235:ir_heat.c     **** 		for(i=0;i<=6;i++) {
- 967               	 r30,lo8(-(t_array))
- 968               		sbci r31,hi8(-(t_array))
- 969 04a4 1982      		std Z+1,r19
- 970 04a6 00C0      		st Z,r18
- 236:ir_heat.c     **** 			t_array[i]=t_array[i+1];
- 972               	:
- 973               		ldd r24,Y+1
- 974 04a8 8981      		subi r24,lo8(-(1))
- 975 04aa 482F      		std Y+1,r24
- 976 04ac 50E0      	.L44:
- 977 04ae 8981      		ldd r24,Y+1
- 978 04b0 882F      		cpi r24,lo8(7)
- 979 04b2 90E0      		brlo .L45
- 981 04b6 880F      	.LM76:
- 982 04b8 991F      		ldd r24,Y+2
- 983 04ba FC01      		ldd r25,Y+3
- 984 04bc E050      		sts (t_array+10)+1,r25
- 985 04be F040      		sts t_array+10,r24
- 987 04c2 3181      	.LM77:
- 988 04c4 CA01      		lds r18,t_array+10
- 989 04c6 880F      		lds r19,(t_array+10)+1
- 990 04c8 991F      		lds r24,t_array+8
- 991 04ca FC01      		lds r25,(t_array+8)+1
- 992 04cc E050      		movw r20,r18
- 993 04ce F040      		sub r20,r24
- 994 04d0 3183      		sbc r21,r25
- 995 04d2 2083      		movw r24,r20
- 996               		movw r18,r24
- 997               		lsl r18
- 998 04d4 8981      		rol r19
- 999 04d6 8F5F      		movw r24,r18
- 1000 04d8 8983      		lsl r24
- 1001               		rol r25
- 1002 04da 8981      		lsl r24
- 1003 04dc 8730      		rol r25
- 1004 04de 00F0      		movw r22,r18
- 237:ir_heat.c     **** 		}
- 238:ir_heat.c     **** 		t_array[5]=value;
- 1005               	0,slope2
- 1006               		lds r21,(slope2)+1
- 1007 04e0 8A81      		movw r24,r20
- 1008 04e2 9B81      		lsl r24
- 1009 04e4 9093 0000 		rol r25
- 1010 04e8 8093 0000 		movw r18,r24
- 239:ir_heat.c     **** 		slope2 = (10*(t_array[5]-t_array[4]) + 19*slope2) / 20;
- 1011               	18
- 1012               		rol r19
- 1013 04ec 2091 0000 		lsl r18
- 1014 04f0 3091 0000 		rol r19
- 1015 04f4 8091 0000 		lsl r18
- 1016 04f8 9091 0000 		rol r19
- 1017 04fc A901      		add r24,r18
- 1018 04fe 481B      		adc r25,r19
- 1019 0500 590B      		add r24,r20
- 1020 0502 CA01      		adc r25,r21
- 1021 0504 9C01      		add r24,r22
- 1022 0506 220F      		adc r25,r23
- 1023 0508 331F      		ldi r18,lo8(20)
- 1024 050a C901      		ldi r19,hi8(20)
- 1025 050c 880F      		movw r22,r18
- 1026 050e 991F      		call __divmodhi4
- 1027 0510 880F      		movw r24,r22
- 1028 0512 991F      		sts (slope2)+1,r25
- 1029 0514 B901      		sts slope2,r24
- 1030 0516 680F      	.L46:
- 1031 0518 791F      	/* epilogue start */
- 1033 051e 5091 0000 	.LM78:
- 1034 0522 CA01      		pop __tmp_reg__
- 1035 0524 880F      		pop __tmp_reg__
- 1036 0526 991F      		pop __tmp_reg__
- 1037 0528 9C01      		pop r28
- 1038 052a 220F      		pop r29
- 1039 052c 331F      		ret
- 1044 0536 820F      	.Lscope12:
- 1046 053a 840F      	.global	get_slope
- 1048 053e 860F      	get_slope:
- 1050 0542 24E1      	.LM79:
- 1051 0544 30E0      	.LFBB13:
- 1052 0546 B901      		push r29
- 1053 0548 0E94 0000 		push r28
- 1054 054c CB01      		rcall .
- 1055 054e 9093 0000 		rcall .
- 1056 0552 8093 0000 		rcall .
- 1057               		in r28,__SP_L__
- 1058               		in r29,__SP_H__
- 240:ir_heat.c     **** 	}
- 241:ir_heat.c     **** }
- 1059               	stabn	68,0,247,.LM80-.LFBB13
- 1060               	.LM80:
- 1061 0556 0F90      		lds r18,t_array+10
- 1062 0558 0F90      		lds r19,(t_array+10)+1
- 1063 055a 0F90      		lds r24,t_array
- 1064 055c CF91      		lds r25,(t_array)+1
- 1065 055e DF91      		movw r20,r18
- 1066 0560 0895      		sub r20,r24
- 1067               		sbc r21,r25
- 1068               		movw r24,r20
- 1069               		std Y+6,r25
- 1070               		std Y+5,r24
- 1072               	.LM81:
- 1073               		lds r18,t_array+8
- 1074               		lds r19,(t_array+8)+1
- 1075               		lds r24,t_array+2
- 242:ir_heat.c     **** 
- 243:ir_heat.c     **** 
- 244:ir_heat.c     **** int16_t get_slope() {
- 1076               	+2)+1
- 1077               		movw r20,r18
- 1078               		sub r20,r24
- 1079 0562 DF93      		sbc r21,r25
- 1080 0564 CF93      		movw r24,r20
- 1081 0566 00D0      		std Y+4,r25
- 1082 0568 00D0      		std Y+3,r24
- 1084 056c CDB7      	.LM82:
- 1085 056e DEB7      		lds r18,t_array+6
- 1086               		lds r19,(t_array+6)+1
- 1087               		lds r24,t_array+4
- 245:ir_heat.c     **** 	int16_t s1, s2, s3;
- 246:ir_heat.c     **** 
- 247:ir_heat.c     **** 	s1 = t_array[5] - t_array[0];
- 1088               	array+4)+1
- 1089               		movw r20,r18
- 1090 0570 2091 0000 		sub r20,r24
- 1091 0574 3091 0000 		sbc r21,r25
- 1092 0578 8091 0000 		movw r24,r20
- 1093 057c 9091 0000 		std Y+2,r25
- 1094 0580 A901      		std Y+1,r24
- 1096 0584 590B      	.LM83:
- 1097 0586 CA01      		ldd r18,Y+5
- 1098 0588 9E83      		ldd r19,Y+6
- 1099 058a 8D83      		movw r24,r18
- 248:ir_heat.c     **** 	s2 = t_array[4] - t_array[1];
- 1100               	l r25
- 1101               		movw r20,r24
- 1102 058c 2091 0000 		add r20,r18
- 1103 0590 3091 0000 		adc r21,r19
- 1104 0594 8091 0000 		ldd r18,Y+3
- 1105 0598 9091 0000 		ldd r19,Y+4
- 1106 059c A901      		movw r24,r18
- 1107 059e 481B      		lsl r24
- 1108 05a0 590B      		rol r25
- 1109 05a2 CA01      		lsl r24
- 1110 05a4 9C83      		rol r25
- 1111 05a6 8B83      		add r24,r18
- 249:ir_heat.c     **** 	s3 = t_array[3] - t_array[2];
- 1112               	
- 1113               		add r20,r24
- 1114 05a8 2091 0000 		adc r21,r25
- 1115 05ac 3091 0000 		ldd r18,Y+1
- 1116 05b0 8091 0000 		ldd r19,Y+2
- 1117 05b4 9091 0000 		movw r24,r18
- 1118 05b8 A901      		lsl r24
- 1119 05ba 481B      		rol r25
- 1120 05bc 590B      		add r24,r18
- 1121 05be CA01      		adc r25,r19
- 1122 05c0 9A83      		movw r18,r24
- 1123 05c2 8983      		lsl r18
- 250:ir_heat.c     **** 	
- 251:ir_heat.c     **** 	return ((3*s1+5*s2+15*s3)/9);
- 1124               	sl r18
- 1125               		rol r19
- 1126 05c4 2D81      		add r24,r18
- 1127 05c6 3E81      		adc r25,r19
- 1128 05c8 C901      		add r24,r20
- 1129 05ca 880F      		adc r25,r21
- 1130 05cc 991F      		ldi r18,lo8(9)
- 1131 05ce AC01      		ldi r19,hi8(9)
- 1132 05d0 420F      		movw r22,r18
- 1133 05d2 531F      		call __divmodhi4
- 1134 05d4 2B81      		movw r24,r22
- 1135 05d6 3C81      	/* epilogue start */
- 1137 05da 880F      	.LM84:
- 1138 05dc 991F      		adiw r28,6
- 1139 05de 880F      		in __tmp_reg__,__SREG__
- 1140 05e0 991F      		cli
- 1141 05e2 820F      		out __SP_H__,r29
- 1142 05e4 931F      		out __SREG__,__tmp_reg__
- 1143 05e6 480F      		out __SP_L__,r28
- 1144 05e8 591F      		pop r28
- 1145 05ea 2981      		pop r29
- 1146 05ec 3A81      		ret
- 1153 05fa 220F      	.Lscope13:
- 1157 0602 820F      	.global	lookahead_temp
- 1159 0606 840F      	lookahead_temp:
- 1161 060a 29E0      	.LM85:
- 1162 060c 30E0      	.LFBB14:
- 1163 060e B901      		push r29
- 1164 0610 0E94 0000 		push r28
- 1165 0614 CB01      		in r28,__SP_L__
- 1166               		in r29,__SP_H__
+ 229:ir_heat.c     **** 
+ 230:ir_heat.c     **** void print_array(){
+ 926               	r24,r24
+ 927               		ldi r25,lo8(0)
+ 928               		lsl r24
+ 929 0436 DF93      		rol r25
+ 930 0438 CF93      		movw r30,r24
+ 931 043a 0F92      		subi r30,lo8(-(t_array))
+ 932 043c CDB7      		sbci r31,hi8(-(t_array))
+ 933 043e DEB7      		ld r18,Z
+ 934               		ldd r19,Z+1
+ 935               		rcall .
+ 231:ir_heat.c     **** 	uint8_t i;
+ 232:ir_heat.c     ****   	printf("Array:");
+ 936               	in r30,__SP_L__
+ 937               		in r31,__SP_H__
+ 938 0440 00D0      		adiw r30,1
+ 939 0442 EDB7      		ldi r24,lo8(.LC4)
+ 940 0444 FEB7      		ldi r25,hi8(.LC4)
+ 941 0446 3196      		std Z+1,r25
+ 942 0448 80E0      		st Z,r24
+ 943 044a 90E0      		std Z+3,r19
+ 944 044c 9183      		std Z+2,r18
+ 945 044e 8083      		call printf
+ 946 0450 0E94 0000 		pop __tmp_reg__
+ 947 0454 0F90      		pop __tmp_reg__
+ 948 0456 0F90      		pop __tmp_reg__
+ 233:ir_heat.c     **** 	for(i=0;i<6;i++) {
+ 949               	g__
+ 951 0458 1982      	.LM75:
+ 952 045a 00C0      		ldd r24,Y+1
+ 953               		subi r24,lo8(-(1))
+ 234:ir_heat.c     ****    	printf(" %i", t_array[i]);
+ 954               	Y+1,r24
+ 955               	.L40:
+ 956 045c 8981      		ldd r24,Y+1
+ 957 045e 882F      		cpi r24,lo8(6)
+ 958 0460 90E0      		brlo .L41
+ 960 0464 991F      	.LM76:
+ 961 0466 FC01      		ldi r24,lo8(10)
+ 962 0468 E050      		ldi r25,hi8(10)
+ 963 046a F040      		call putchar
+ 964 046c 2081      	/* epilogue start */
+ 966 0470 00D0      	.LM77:
+ 967 0472 00D0      		pop __tmp_reg__
+ 968 0474 EDB7      		pop r28
+ 969 0476 FEB7      		pop r29
+ 970 0478 3196      		ret
+ 975 0482 3383      	.Lscope11:
+ 978 048a 0F90      	.global	add_value
+ 980 048e 0F90      	add_value:
+ 982               	.LM78:
+ 983               	.LFBB12:
+ 984 0492 8981      		push r29
+ 985 0494 8F5F      		push r28
+ 986 0496 8983      		rcall .
+ 987               		push __tmp_reg__
+ 988 0498 8981      		in r28,__SP_L__
+ 989 049a 8630      		in r29,__SP_H__
+ 990 049c 00F0      	/* prologue: function */
+ 235:ir_heat.c     **** 	}
+ 236:ir_heat.c     ****   	printf("\n");
+ 991               	d Y+2,r24
+ 993 049e 8AE0      	.LM79:
+ 994 04a0 90E0      		lds r24,t_array
+ 995 04a2 0E94 0000 		lds r25,(t_array)+1
+ 996               		sbiw r24,0
+ 237:ir_heat.c     **** }
+ 997               	.L44
+ 999 04a6 0F90      	.LM80:
+ 1000 04a8 CF91      		ldd r24,Y+2
+ 1001 04aa DF91      		ldd r25,Y+3
+ 1002 04ac 0895      		sts (t_array+10)+1,r25
+ 1003               		sts t_array+10,r24
+ 1004               		lds r24,t_array+10
+ 1005               		lds r25,(t_array+10)+1
+ 1006               		sts (t_array+8)+1,r25
+ 1007               		sts t_array+8,r24
+ 1008               		lds r24,t_array+8
+ 1009               		lds r25,(t_array+8)+1
+ 1010               		sts (t_array+6)+1,r25
+ 1011               		sts t_array+6,r24
+ 1012               		lds r24,t_array+6
+ 238:ir_heat.c     **** 
+ 239:ir_heat.c     **** 
+ 240:ir_heat.c     **** void add_value(uint16_t value) {
+ 1013               	y+6)+1
+ 1014               		sts (t_array+4)+1,r25
+ 1015               		sts t_array+4,r24
+ 1016 04ae DF93      		lds r24,t_array+4
+ 1017 04b0 CF93      		lds r25,(t_array+4)+1
+ 1018 04b2 00D0      		sts (t_array+2)+1,r25
+ 1019 04b4 0F92      		sts t_array+2,r24
+ 1020 04b6 CDB7      		lds r24,t_array+2
+ 1021 04b8 DEB7      		lds r25,(t_array+2)+1
+ 1022               		sts (t_array)+1,r25
+ 1023               		sts t_array,r24
+ 1024 04ba 9B83      		rjmp .L48
+ 1025 04bc 8A83      	.L44:
+ 241:ir_heat.c     **** 	uint8_t i;
+ 242:ir_heat.c     **** 	if(t_array[0]==0) {
+ 1026               	246,.LM81-.LFBB12
+ 1027               	.LM81:
+ 1028 04be 8091 0000 		std Y+1,__zero_reg__
+ 1029 04c2 9091 0000 		rjmp .L46
+ 1030 04c6 0097      	.L47:
+ 243:ir_heat.c     **** 	t_array[0]=t_array[1]=t_array[2]=t_array[3]=t_array[4]=t_array[5]=value;
+ 1032               	
+ 1033               		ldd r24,Y+1
+ 1034 04ca 8A81      		mov r20,r24
+ 1035 04cc 9B81      		ldi r21,lo8(0)
+ 1036 04ce 9093 0000 		ldd r24,Y+1
+ 1037 04d2 8093 0000 		mov r24,r24
+ 1038 04d6 8091 0000 		ldi r25,lo8(0)
+ 1039 04da 9091 0000 		adiw r24,1
+ 1040 04de 9093 0000 		lsl r24
+ 1041 04e2 8093 0000 		rol r25
+ 1042 04e6 8091 0000 		movw r30,r24
+ 1043 04ea 9091 0000 		subi r30,lo8(-(t_array))
+ 1044 04ee 9093 0000 		sbci r31,hi8(-(t_array))
+ 1045 04f2 8093 0000 		ld r18,Z
+ 1046 04f6 8091 0000 		ldd r19,Z+1
+ 1047 04fa 9091 0000 		movw r24,r20
+ 1048 04fe 9093 0000 		lsl r24
+ 1049 0502 8093 0000 		rol r25
+ 1050 0506 8091 0000 		movw r30,r24
+ 1051 050a 9091 0000 		subi r30,lo8(-(t_array))
+ 1052 050e 9093 0000 		sbci r31,hi8(-(t_array))
+ 1053 0512 8093 0000 		std Z+1,r19
+ 1054 0516 8091 0000 		st Z,r18
+ 1056 051e 9093 0000 	.LM83:
+ 1057 0522 8093 0000 		ldd r24,Y+1
+ 1058 0526 00C0      		subi r24,lo8(-(1))
+ 1059               		std Y+1,r24
+ 244:ir_heat.c     **** 	}
+ 245:ir_heat.c     **** 	else {
+ 246:ir_heat.c     **** 		for(i=0;i<=6;i++) {
+ 1060               	,lo8(7)
+ 1061               		brlo .L47
+ 1063 052a 00C0      	.LM84:
+ 1064               		ldd r24,Y+2
+ 247:ir_heat.c     **** 			t_array[i]=t_array[i+1];
+ 1065               	r25,Y+3
+ 1066               		sts (t_array+10)+1,r25
+ 1067 052c 8981      		sts t_array+10,r24
+ 1069 0530 50E0      	.LM85:
+ 1070 0532 8981      		lds r18,t_array+10
+ 1071 0534 882F      		lds r19,(t_array+10)+1
+ 1072 0536 90E0      		lds r24,t_array+8
+ 1073 0538 0196      		lds r25,(t_array+8)+1
+ 1074 053a 880F      		movw r20,r18
+ 1075 053c 991F      		sub r20,r24
+ 1076 053e FC01      		sbc r21,r25
+ 1077 0540 E050      		movw r24,r20
+ 1078 0542 F040      		movw r18,r24
+ 1079 0544 2081      		lsl r18
+ 1080 0546 3181      		rol r19
+ 1081 0548 CA01      		movw r24,r18
+ 1082 054a 880F      		lsl r24
+ 1083 054c 991F      		rol r25
+ 1084 054e FC01      		lsl r24
+ 1085 0550 E050      		rol r25
+ 1086 0552 F040      		movw r22,r18
+ 1087 0554 3183      		add r22,r24
+ 1088 0556 2083      		adc r23,r25
+ 1089               		lds r20,slope2
+ 1090               		lds r21,(slope2)+1
+ 1091 0558 8981      		movw r24,r20
+ 1092 055a 8F5F      		lsl r24
+ 1093 055c 8983      		rol r25
+ 1094               		movw r18,r24
+ 1095 055e 8981      		lsl r18
+ 1096 0560 8730      		rol r19
+ 1097 0562 00F0      		lsl r18
+ 248:ir_heat.c     **** 		}
+ 249:ir_heat.c     **** 		t_array[5]=value;
+ 1098               	24,r18
+ 1099               		adc r25,r19
+ 1100 0564 8A81      		add r24,r20
+ 1101 0566 9B81      		adc r25,r21
+ 1102 0568 9093 0000 		add r24,r22
+ 1103 056c 8093 0000 		adc r25,r23
+ 250:ir_heat.c     **** 		slope2 = (10*(t_array[5]-t_array[4]) + 19*slope2) / 20;
+ 1104               	18,lo8(20)
+ 1105               		ldi r19,hi8(20)
+ 1106 0570 2091 0000 		movw r22,r18
+ 1107 0574 3091 0000 		call __divmodhi4
+ 1108 0578 8091 0000 		movw r24,r22
+ 1109 057c 9091 0000 		sts (slope2)+1,r25
+ 1110 0580 A901      		sts slope2,r24
+ 1111 0582 481B      	.L48:
+ 1112 0584 590B      	/* epilogue start */
+ 1114 0588 9C01      	.LM86:
+ 1115 058a 220F      		pop __tmp_reg__
+ 1116 058c 331F      		pop __tmp_reg__
+ 1117 058e C901      		pop __tmp_reg__
+ 1118 0590 880F      		pop r28
+ 1119 0592 991F      		pop r29
+ 1120 0594 880F      		ret
+ 1125 059e 4091 0000 	.Lscope12:
+ 1127 05a6 CA01      	.global	get_slope
+ 1129 05aa 991F      	get_slope:
+ 1131 05ae 220F      	.LM87:
+ 1132 05b0 331F      	.LFBB13:
+ 1133 05b2 220F      		push r29
+ 1134 05b4 331F      		push r28
+ 1135 05b6 220F      		rcall .
+ 1136 05b8 331F      		rcall .
+ 1137 05ba 820F      		rcall .
+ 1138 05bc 931F      		in r28,__SP_L__
+ 1139 05be 840F      		in r29,__SP_H__
+ 1140 05c0 951F      	/* prologue: function */
+ 1141 05c2 860F      	/* frame size = 6 */
+ 1143 05c6 24E1      	.LM88:
+ 1144 05c8 30E0      		lds r18,t_array+10
+ 1145 05ca B901      		lds r19,(t_array+10)+1
+ 1146 05cc 0E94 0000 		lds r24,t_array
+ 1147 05d0 CB01      		lds r25,(t_array)+1
+ 1148 05d2 9093 0000 		movw r20,r18
+ 1149 05d6 8093 0000 		sub r20,r24
+ 1150               		sbc r21,r25
+ 1151               		movw r24,r20
+ 251:ir_heat.c     **** 	}
  252:ir_heat.c     **** }
- 1167               	out __SP_H__,r29
- 1168               		out __SREG__,__tmp_reg__
- 1169 0616 2696      		out __SP_L__,r28
- 1170 0618 0FB6      	/* prologue: function */
- 1171 061a F894      	/* frame size = 7 */
- 1172 061c DEBF      		std Y+6,r24
- 1173 061e 0FBE      		std Y+7,r22
- 1175 0622 CF91      	.LM86:
- 1176 0624 DF91      		std Y+5,__zero_reg__
- 1177 0626 0895      		std Y+4,__zero_reg__
- 1179               	.LM87:
- 1180               		lds r18,t_array+10
- 1181               		lds r19,(t_array+10)+1
- 1182               		lds r24,t_array+8
- 1183               		lds r25,(t_array+8)+1
- 1184               		add r24,r18
- 1185               		adc r25,r19
- 1186               		asr r25
- 1187               		ror r24
- 1188               		std Y+3,r25
- 1189               		std Y+2,r24
+ 1152               	-.LFBB13
+ 1153               	.LM89:
+ 1154 05da 0F90      		lds r18,t_array+8
+ 1155 05dc 0F90      		lds r19,(t_array+8)+1
+ 1156 05de 0F90      		lds r24,t_array+2
+ 1157 05e0 CF91      		lds r25,(t_array+2)+1
+ 1158 05e2 DF91      		movw r20,r18
+ 1159 05e4 0895      		sub r20,r24
+ 1160               		sbc r21,r25
+ 1161               		movw r24,r20
+ 1162               		std Y+4,r25
+ 1163               		std Y+3,r24
+ 1165               	.LM90:
+ 1166               		lds r18,t_array+6
+ 1167               		lds r19,(t_array+6)+1
+ 1168               		lds r24,t_array+4
  253:ir_heat.c     **** 
  254:ir_heat.c     **** 
- 255:ir_heat.c     **** int16_t lookahead_temp(int8_t slope, uint8_t steps) {
- 1191               	 r18,r24
- 1192               		ldi r19,lo8(0)
- 1193               		ldd r24,Y+6
- 1194 0628 DF93      		clr r25
- 1195 062a CF93      		sbrc r24,7
- 1196 062c CDB7      		com r25
- 1197 062e DEB7      		movw r20,r24
- 1198 0630 2797      		mul r18,r20
- 1199 0632 0FB6      		movw r24,r0
- 1200 0634 F894      		mul r18,r21
- 1201 0636 DEBF      		add r25,r0
- 1202 0638 0FBE      		mul r19,r20
- 1203 063a CDBF      		add r25,r0
- 1204               		clr r1
- 1205               		movw r18,r24
- 1206 063c 8E83      		ldd r24,Y+2
- 1207 063e 6F83      		ldd r25,Y+3
- 256:ir_heat.c     **** 	int16_t max = 0;
- 1208               	 r25,r19
- 1209               	/* epilogue start */
- 1211 0642 1C82      	.LM89:
- 257:ir_heat.c     **** 	uint16_t av;
- 258:ir_heat.c     **** 	uint8_t i;
- 259:ir_heat.c     **** //	for(i=0;i<6;i++) {
- 260:ir_heat.c     **** //		if(t_array[i]>max) max=t_array[i];
- 261:ir_heat.c     **** //	}
- 262:ir_heat.c     **** 	av = (t_array[5]+t_array[4])>>1;
- 1212               	w r28,7
- 1213               		in __tmp_reg__,__SREG__
- 1214 0644 2091 0000 		cli
- 1215 0648 3091 0000 		out __SP_H__,r29
- 1216 064c 8091 0000 		out __SREG__,__tmp_reg__
- 1217 0650 9091 0000 		out __SP_L__,r28
- 1218 0654 820F      		pop r28
- 1219 0656 931F      		pop r29
- 1220 0658 9595      		ret
- 263:ir_heat.c     **** 	return (av + steps*(int16_t)slope);
- 1224               	4,2)",128,0,0,1
- 1227 0662 282F      	.Lscope14:
- 1230 0668 9927      	.global	get_temperature
- 1232 066c 9095      	get_temperature:
- 1234 0670 249F      	.LM90:
- 1235 0672 C001      	.LFBB15:
- 1236 0674 259F      		push r29
- 1237 0676 900D      		push r28
- 1238 0678 349F      		in r28,__SP_L__
- 1239 067a 900D      		in r29,__SP_H__
- 1240 067c 1124      		sbiw r28,15
- 1241 067e 9C01      		in __tmp_reg__,__SREG__
- 1242 0680 8A81      		cli
- 1243 0682 9B81      		out __SP_H__,r29
- 1244 0684 820F      		out __SREG__,__tmp_reg__
- 1245 0686 931F      		out __SP_L__,r28
- 1246               	/* prologue: function */
- 264:ir_heat.c     **** }
- 1247               	std Y+13,r24
- 1249 0688 2796      	.LM91:
- 1250 068a 0FB6      		ldi r24,lo8(-76)
- 1251 068c F894      		call i2c_start
- 1253 0690 0FBE      	.LM92:
- 1254 0692 CDBF      		ldd r24,Y+13
- 1255 0694 CF91      		call i2c_write
- 1257 0698 0895      	.LM93:
- 1258               		ldi r24,lo8(181)
- 1259               		ldi r25,hi8(181)
- 1260               		call i2c_rep_start
- 1261               		std Y+4,r24
- 1263               	.LM94:
- 1264               		ldd r24,Y+4
- 1265               		tst r24
- 1266               		breq .L52
- 1268               	.LM95:
- 1269               		ldi r24,lo8(181)
+ 255:ir_heat.c     **** int16_t get_slope() {
+ 1169               	+4)+1
+ 1170               		movw r20,r18
+ 1171               		sub r20,r24
+ 1172 05e6 DF93      		sbc r21,r25
+ 1173 05e8 CF93      		movw r24,r20
+ 1174 05ea 00D0      		std Y+2,r25
+ 1175 05ec 00D0      		std Y+1,r24
+ 1177 05f0 CDB7      	.LM91:
+ 1178 05f2 DEB7      		ldd r18,Y+5
+ 1179               		ldd r19,Y+6
+ 1180               		movw r24,r18
+ 256:ir_heat.c     **** 	int16_t s1, s2, s3;
+ 257:ir_heat.c     **** 
+ 258:ir_heat.c     **** 	s1 = t_array[5] - t_array[0];
+ 1181               	l r25
+ 1182               		movw r20,r24
+ 1183 05f4 2091 0000 		add r20,r18
+ 1184 05f8 3091 0000 		adc r21,r19
+ 1185 05fc 8091 0000 		ldd r18,Y+3
+ 1186 0600 9091 0000 		ldd r19,Y+4
+ 1187 0604 A901      		movw r24,r18
+ 1188 0606 481B      		lsl r24
+ 1189 0608 590B      		rol r25
+ 1190 060a CA01      		lsl r24
+ 1191 060c 9E83      		rol r25
+ 1192 060e 8D83      		add r24,r18
+ 259:ir_heat.c     **** 	s2 = t_array[4] - t_array[1];
+ 1193               	
+ 1194               		add r20,r24
+ 1195 0610 2091 0000 		adc r21,r25
+ 1196 0614 3091 0000 		ldd r18,Y+1
+ 1197 0618 8091 0000 		ldd r19,Y+2
+ 1198 061c 9091 0000 		movw r24,r18
+ 1199 0620 A901      		lsl r24
+ 1200 0622 481B      		rol r25
+ 1201 0624 590B      		add r24,r18
+ 1202 0626 CA01      		adc r25,r19
+ 1203 0628 9C83      		movw r18,r24
+ 1204 062a 8B83      		lsl r18
+ 260:ir_heat.c     **** 	s3 = t_array[3] - t_array[2];
+ 1205               	sl r18
+ 1206               		rol r19
+ 1207 062c 2091 0000 		add r24,r18
+ 1208 0630 3091 0000 		adc r25,r19
+ 1209 0634 8091 0000 		add r24,r20
+ 1210 0638 9091 0000 		adc r25,r21
+ 1211 063c A901      		ldi r18,lo8(9)
+ 1212 063e 481B      		ldi r19,hi8(9)
+ 1213 0640 590B      		movw r22,r18
+ 1214 0642 CA01      		call __divmodhi4
+ 1215 0644 9A83      		movw r24,r22
+ 1216 0646 8983      	/* epilogue start */
+ 261:ir_heat.c     **** 	
+ 262:ir_heat.c     **** 	return ((3*s1+5*s2+15*s3)/9);
+ 1217               	,263,.LM92-.LFBB13
+ 1218               	.LM92:
+ 1219 0648 2D81      		adiw r28,6
+ 1220 064a 3E81      		in __tmp_reg__,__SREG__
+ 1221 064c C901      		cli
+ 1222 064e 880F      		out __SP_H__,r29
+ 1223 0650 991F      		out __SREG__,__tmp_reg__
+ 1224 0652 AC01      		out __SP_L__,r28
+ 1225 0654 420F      		pop r28
+ 1226 0656 531F      		pop r29
+ 1227 0658 2B81      		ret
+ 1234 0666 820F      	.Lscope13:
+ 1238 066e 2981      	.global	lookahead_temp
+ 1240 0672 C901      	lookahead_temp:
+ 1242 0676 991F      	.LM93:
+ 1243 0678 820F      	.LFBB14:
+ 1244 067a 931F      		push r29
+ 1245 067c 9C01      		push r28
+ 1246 067e 220F      		in r28,__SP_L__
+ 1247 0680 331F      		in r29,__SP_H__
+ 1248 0682 220F      		sbiw r28,7
+ 1249 0684 331F      		in __tmp_reg__,__SREG__
+ 1250 0686 820F      		cli
+ 1251 0688 931F      		out __SP_H__,r29
+ 1252 068a 840F      		out __SREG__,__tmp_reg__
+ 1253 068c 951F      		out __SP_L__,r28
+ 1254 068e 29E0      	/* prologue: function */
+ 1255 0690 30E0      	/* frame size = 7 */
+ 1256 0692 B901      		std Y+6,r24
+ 1257 0694 0E94 0000 		std Y+7,r22
+ 1259               	.LM94:
+ 263:ir_heat.c     **** }
+ 1260               	
+ 1262 069a 2696      	.LM95:
+ 1263 069c 0FB6      		lds r18,t_array+10
+ 1264 069e F894      		lds r19,(t_array+10)+1
+ 1265 06a0 DEBF      		lds r24,t_array+8
+ 1266 06a2 0FBE      		lds r25,(t_array+8)+1
+ 1267 06a4 CDBF      		add r24,r18
+ 1268 06a6 CF91      		adc r25,r19
+ 1269 06a8 DF91      		asr r25
+ 1270 06aa 0895      		ror r24
+ 1271               		std Y+3,r25
+ 1272               		std Y+2,r24
+ 1274               	.LM96:
+ 1275               		ldd r24,Y+7
+ 1276               		mov r18,r24
+ 1277               		ldi r19,lo8(0)
+ 1278               		ldd r24,Y+6
+ 1279               		clr r25
+ 1280               		sbrc r24,7
+ 1281               		com r25
+ 1282               		movw r20,r24
+ 1283               		mul r18,r20
+ 264:ir_heat.c     **** 
  265:ir_heat.c     **** 
- 266:ir_heat.c     **** 
- 267:ir_heat.c     **** 
- 268:ir_heat.c     **** uint16_t get_temperature(uint8_t adr) {
- 1270               	 i2c_rep_start
- 1271               	.L52:
- 1273 069a DF93      	.LM96:
- 1274 069c CF93      		call i2c_read_ack
- 1275 069e CDB7      		std Y+3,r24
- 1277 06a2 2F97      	.LM97:
- 1278 06a4 0FB6      		call i2c_read_ack
- 1279 06a6 F894      		std Y+2,r24
- 1281 06aa 0FBE      	.LM98:
- 1282 06ac CDBF      		ldd r24,Y+2
- 1283               		mov r24,r24
- 1284               		ldi r25,lo8(0)
- 1285 06ae 8D87      		mov r25,r24
- 269:ir_heat.c     **** 	uint16_t raw;
- 270:ir_heat.c     **** 	uint8_t 	ret;
- 271:ir_heat.c     **** 	uint8_t 	lo, hi, pec;
- 272:ir_heat.c     **** 	uint8_t	pec_read[6];
- 273:ir_heat.c     **** 
- 274:ir_heat.c     **** 	i2c_start(MLX90614_WRITE);
- 1286               	18,r24
- 1287               		ldd r24,Y+3
- 1288 06b0 84EB      		mov r24,r24
- 1289 06b2 0E94 0000 		ldi r25,lo8(0)
- 275:ir_heat.c     **** 	i2c_write(adr);
- 1290               	 r24,r18
- 1291               		adc r25,r19
- 1292 06b6 8D85      		std Y+6,r25
- 1293 06b8 0E94 0000 		std Y+5,r24
- 276:ir_heat.c     **** 	
- 277:ir_heat.c     **** 	ret = i2c_rep_start(MLX90614_READ);
- 1294               	abn	68,0,286,.LM99-.LFBB15
- 1295               	.LM99:
- 1296 06bc 85EB      		call i2c_read_ack
- 1297 06be 90E0      		std Y+1,r24
- 1299 06c4 8C83      	.LM100:
- 278:ir_heat.c     **** 	if(ret) {
- 1300               	i2c_stop
- 1302 06c6 8C81      	.LM101:
- 1303 06c8 8823      		ldd r24,Y+5
- 1304 06ca 01F0      		ldd r25,Y+6
- 279:ir_heat.c     **** 		i2c_rep_start(MLX90614_READ);
- 1305               	r25
- 1306               		brge .L53
- 1307 06cc 85EB      		std Y+15,__zero_reg__
- 1308 06ce 90E0      		std Y+14,__zero_reg__
- 1309 06d0 0E94 0000 		rjmp .L54
- 1310               	.L53:
- 280:ir_heat.c     ****    }
- 281:ir_heat.c     **** 
- 282:ir_heat.c     **** 	lo = i2c_read_ack();
- 1311               	n	68,0,291,.LM102-.LFBB15
- 1312               	.LM102:
- 1313 06d4 0E94 0000 		ldd r24,Y+5
- 1314 06d8 8B83      		ldd r25,Y+6
- 283:ir_heat.c     **** 	hi = i2c_read_ack();
- 1315               	 r18,lo8(5)
- 1316               		ldi r19,hi8(5)
- 1317 06da 0E94 0000 		movw r22,r18
- 1318 06de 8A83      		call __udivmodhi4
- 284:ir_heat.c     **** 	raw = (uint16_t)(hi<<8)+lo;
- 1319               	w r24,r22
- 1320               		movw r18,r24
- 1321 06e0 8A81      		subi r18,lo8(-(-2731))
- 1322 06e2 882F      		sbci r19,hi8(-(-2731))
- 1323 06e4 90E0      		std Y+15,r19
- 1324 06e6 982F      		std Y+14,r18
- 1325 06e8 8827      	.L54:
- 1326 06ea 9C01      		ldd r24,Y+14
- 1327 06ec 8B81      		ldd r25,Y+15
- 1328 06ee 882F      	/* epilogue start */
- 1330 06f2 820F      	.LM103:
- 1331 06f4 931F      		adiw r28,15
- 1332 06f6 9E83      		in __tmp_reg__,__SREG__
- 1333 06f8 8D83      		cli
- 285:ir_heat.c     **** 	//printf("0x%04x\n", raw);
- 286:ir_heat.c     **** 	pec = i2c_read_ack();
- 1334               	29
- 1335               		out __SREG__,__tmp_reg__
- 1336 06fa 0E94 0000 		out __SP_L__,r28
- 1337 06fe 8983      		pop r28
+ 266:ir_heat.c     **** int16_t lookahead_temp(int8_t slope, uint8_t steps) {
+ 1284               	21
+ 1285               		add r25,r0
+ 1286               		mul r19,r20
+ 1287 06ac DF93      		add r25,r0
+ 1288 06ae CF93      		clr r1
+ 1289 06b0 CDB7      		movw r18,r24
+ 1290 06b2 DEB7      		ldd r24,Y+2
+ 1291 06b4 2797      		ldd r25,Y+3
+ 1292 06b6 0FB6      		add r24,r18
+ 1293 06b8 F894      		adc r25,r19
+ 1294 06ba DEBF      	/* epilogue start */
+ 1296 06be CDBF      	.LM97:
+ 1297               		adiw r28,7
+ 1298               		in __tmp_reg__,__SREG__
+ 1299 06c0 8E83      		cli
+ 1300 06c2 6F83      		out __SP_H__,r29
+ 267:ir_heat.c     **** 	int16_t max = 0;
+ 1301               	mp_reg__
+ 1302               		out __SP_L__,r28
+ 1303 06c4 1D82      		pop r28
+ 1304 06c6 1C82      		pop r29
+ 268:ir_heat.c     **** 	uint16_t av;
+ 269:ir_heat.c     **** 	uint8_t i;
+ 270:ir_heat.c     **** //	for(i=0;i<6;i++) {
+ 271:ir_heat.c     **** //		if(t_array[i]>max) max=t_array[i];
+ 272:ir_heat.c     **** //	}
+ 273:ir_heat.c     **** 	av = (t_array[5]+t_array[4])>>1;
+ 1305               	
+ 1312 06da 931F      	.Lscope14:
+ 1315 06e0 9B83      	.global	get_temperature
+ 274:ir_heat.c     **** 	return (av + steps*(int16_t)slope);
+ 1317               	ture:
+ 1319 06e4 8F81      	.LM98:
+ 1320 06e6 282F      	.LFBB15:
+ 1321 06e8 30E0      		push r29
+ 1322 06ea 8E81      		push r28
+ 1323 06ec 9927      		in r28,__SP_L__
+ 1324 06ee 87FD      		in r29,__SP_H__
+ 1325 06f0 9095      		sbiw r28,15
+ 1326 06f2 AC01      		in __tmp_reg__,__SREG__
+ 1327 06f4 249F      		cli
+ 1328 06f6 C001      		out __SP_H__,r29
+ 1329 06f8 259F      		out __SREG__,__tmp_reg__
+ 1330 06fa 900D      		out __SP_L__,r28
+ 1331 06fc 349F      	/* prologue: function */
+ 1332 06fe 900D      	/* frame size = 15 */
+ 1333 0700 1124      		std Y+13,r24
+ 1335 0704 8A81      	.LM99:
+ 1336 0706 9B81      		ldi r24,lo8(-76)
+ 1337 0708 820F      		call i2c_start
+ 1339               	.LM100:
+ 275:ir_heat.c     **** }
+ 1340               	_write
+ 1342 070c 2796      	.LM101:
+ 1343 070e 0FB6      		ldi r24,lo8(181)
+ 1344 0710 F894      		ldi r25,hi8(181)
+ 1345 0712 DEBF      		call i2c_rep_start
+ 1346 0714 0FBE      		std Y+4,r24
+ 1348 0718 CF91      	.LM102:
+ 1349 071a DF91      		ldd r24,Y+4
+ 1350 071c 0895      		tst r24
+ 1351               		breq .L54
+ 1353               	.LM103:
+ 1354               		ldi r24,lo8(181)
+ 1355               		ldi r25,hi8(181)
+ 1356               		call i2c_rep_start
+ 1357               	.L54:
+ 1359               	.LM104:
+ 1360               		call i2c_read_ack
+ 1361               		std Y+3,r24
+ 276:ir_heat.c     **** 
+ 277:ir_heat.c     **** 
+ 278:ir_heat.c     **** 
+ 279:ir_heat.c     **** uint16_t get_temperature(uint8_t adr) {
+ 1363               	ack
+ 1364               		std Y+2,r24
+ 1366 071e DF93      	.LM106:
+ 1367 0720 CF93      		ldd r24,Y+2
+ 1368 0722 CDB7      		mov r24,r24
+ 1369 0724 DEB7      		ldi r25,lo8(0)
+ 1370 0726 2F97      		mov r25,r24
+ 1371 0728 0FB6      		clr r24
+ 1372 072a F894      		movw r18,r24
+ 1373 072c DEBF      		ldd r24,Y+3
+ 1374 072e 0FBE      		mov r24,r24
+ 1375 0730 CDBF      		ldi r25,lo8(0)
+ 1376               		add r24,r18
+ 1377               		adc r25,r19
+ 1378 0732 8D87      		std Y+6,r25
+ 280:ir_heat.c     **** 	uint16_t raw;
+ 281:ir_heat.c     **** 	uint8_t 	ret;
+ 282:ir_heat.c     **** 	uint8_t 	lo, hi, pec;
+ 283:ir_heat.c     **** 	uint8_t	pec_read[6];
+ 284:ir_heat.c     **** 
+ 285:ir_heat.c     **** 	i2c_start(MLX90614_WRITE);
+ 1379               	tabn	68,0,297,.LM107-.LFBB15
+ 1380               	.LM107:
+ 1381 0734 84EB      		call i2c_read_ack
+ 1382 0736 0E94 0000 		std Y+1,r24
+ 286:ir_heat.c     **** 	i2c_write(adr);
+ 1383               	abn	68,0,299,.LM108-.LFBB15
+ 1384               	.LM108:
+ 1385 073a 8D85      		call i2c_stop
  287:ir_heat.c     **** 	
- 288:ir_heat.c     **** 	i2c_stop();
- 1338               	 r29
- 1339               		ret
- 289:ir_heat.c     **** 	if(raw & 0x8000) return 0;
- 1341               	tabs	"raw:(4,4)",128,0,0,5
- 1349 0710 00C0      	.Lscope15:
- 1350               		.lcomm last.1911,1
- 290:ir_heat.c     **** 	
- 291:ir_heat.c     **** 	return (raw / 5 - 2731);
- 1351               	2:
- 1352               		.string	">>> Relais ON"
- 1353 0712 8D81      	.LC3:
- 1354 0714 9E81      		.string	">>> Relais OFF"
- 1355 0716 25E0      		.text
- 1358 071c 0E94 0000 	.global	set_relais
- 1360 0722 9C01      	set_relais:
- 1362 0726 3A40      	.LM104:
- 1363 0728 3F87      	.LFBB16:
- 1364 072a 2E87      		push r29
- 1365               		push r28
- 1366 072c 8E85      		rcall .
- 1367 072e 9F85      		in r28,__SP_L__
- 1368               		in r29,__SP_H__
- 292:ir_heat.c     **** }
- 1369               	ion */
- 1370               	/* frame size = 2 */
- 1371 0730 2F96      		std Y+2,r25
- 1372 0732 0FB6      		std Y+1,r24
- 1374 0736 DEBF      	.LM105:
- 1375 0738 0FBE      		ldd r24,Y+1
- 1376 073a CDBF      		ldd r25,Y+2
- 1377 073c CF91      		sbiw r24,0
- 1378 073e DF91      		breq .L57
- 1380               	.LM106:
- 1381               		lds r24,last.1911
- 1382               		mov r18,r24
- 1383               		ldi r19,lo8(0)
- 1384               		ldd r24,Y+1
- 1385               		ldd r25,Y+2
- 1386               		cp r18,r24
- 1387               		cpc r19,r25
- 1388               		breq .L58
- 1389               		ldi r24,lo8(.LC2)
- 1390               		ldi r25,hi8(.LC2)
- 1391               		call puts
- 1392               	.L58:
- 1394               	.LM107:
- 1395 0021 3E3E 3E20 		ldi r26,lo8(37)
- 1395      5265 6C61 
- 1395      6973 204F 
- 1395      4646 00
- 1396               		ldi r27,hi8(37)
- 1397               		ldi r30,lo8(37)
- 1398               		ldi r31,hi8(37)
- 1399               		ld r24,Z
- 1400               		ori r24,lo8(-128)
- 1401               		st X,r24
- 293:ir_heat.c     **** 
- 294:ir_heat.c     **** void set_relais(on) {
- 1402               	,.LM108-.LFBB16
- 1403               	.LM108:
- 1404               		lds r24,last.1911
- 1405 0742 DF93      		mov r18,r24
- 1406 0744 CF93      		ldi r19,lo8(0)
- 1407 0746 00D0      		ldd r24,Y+1
- 1408 0748 CDB7      		ldd r25,Y+2
- 1409 074a DEB7      		cp r18,r24
- 1410               		cpc r19,r25
- 1411               		breq .L60
- 1412 074c 9A83      		ldi r24,lo8(.LC3)
- 1413 074e 8983      		ldi r25,hi8(.LC3)
- 295:ir_heat.c     **** 	static uint8_t last = 0;
- 296:ir_heat.c     **** 	if(on) {
- 1414               	L60:
- 1416 0750 8981      	.LM109:
- 1417 0752 9A81      		ldi r26,lo8(37)
- 1418 0754 0097      		ldi r27,hi8(37)
- 1419 0756 01F0      		ldi r30,lo8(37)
- 297:ir_heat.c     **** 		if(on != last) printf(">>> Relais ON\n");
- 1420               	31,hi8(37)
- 1421               		ld r24,Z
- 1422 0758 8091 0000 		andi r24,lo8(127)
- 1423 075c 282F      		st X,r24
- 1424 075e 30E0      	.L59:
- 1426 0762 9A81      	.LM110:
- 1427 0764 2817      		ldd r24,Y+1
- 1428 0766 3907      		sts last.1911,r24
- 1429 0768 01F0      	/* epilogue start */
- 1431 076c 90E0      	.LM111:
- 1432 076e 0E94 0000 		pop __tmp_reg__
- 1433               		pop __tmp_reg__
- 298:ir_heat.c     **** 		RELAIS_ON;
- 1434               	r29
- 1435               		ret
- 1440 077a 8081      	.Lscope16:
- 1442 077e 8C93      	.global	my_function
- 1444               	my_function:
- 299:ir_heat.c     **** 	}
- 300:ir_heat.c     **** 	else {
- 301:ir_heat.c     **** 		if(on != last) printf(">>> Relais OFF\n");
- 1445               	0,311,.LM112-.LFBB17
- 1446               	.LM112:
- 1447 0782 8091 0000 	.LFBB17:
- 1448 0786 282F      		push r29
- 1449 0788 30E0      		push r28
- 1450 078a 8981      		in r28,__SP_L__
- 1451 078c 9A81      		in r29,__SP_H__
- 1452 078e 2817      	/* prologue: function */
- 1453 0790 3907      	/* frame size = 0 */
- 1455 0794 80E0      	.LM113:
- 1456 0796 90E0      	/* #APP */
- 1457 0798 0E94 0000 	 ;  313 "ir_heat.c" 1
- 1458               		nop
- 302:ir_heat.c     **** 		RELAIS_OFF;
- 1459               	epilogue start */
- 1461 079c A5E2      	.LM114:
- 1462 079e B0E0      	/* #NOAPP */
- 1463 07a0 E5E2      		pop r28
- 1464 07a2 F0E0      		pop r29
- 1465 07a4 8081      		ret
- 1467 07a8 8C93      	.Lscope17:
- 1468               		.data
- 303:ir_heat.c     **** 	}
- 304:ir_heat.c     **** 	last = on;
- 1469               	ring	"\nStart"
- 1470               	.LC5:
- 1471 07aa 8981      		.string	"Error Temp=0"
- 1472 07ac 8093 0000 	.LC6:
- 1473               		.string	"Temp: %i, "
- 305:ir_heat.c     **** }
- 1474               	
- 1475               		.string	"slope_raw: %i, slope: %i, slope2: %i, "
- 1476 07b0 0F90      	.LC8:
- 1477 07b2 0F90      		.string	"Ambient: %i\n"
- 1478 07b4 CF91      	.LC9:
- 1479 07b6 DF91      		.string	"Temperature Protect Rule 48, "
- 1480 07b8 0895      	.LC10:
- 1481               		.string	"Temperature Protect Rule 45, "
- 1482               	.LC11:
- 1483               		.string	"Temperature Protect Rule 40, "
- 1484               	.LC12:
- 1485               		.string	"Temperature Protect Rule 35, "
- 1486               	.LC13:
- 1487               		.string	"Temperature Protect Rule 30, "
- 1488               	.LC14:
- 1489               		.string	"Temperature Protect General Rule, "
- 306:ir_heat.c     **** 
- 307:ir_heat.c     **** // It is recommended to use this coding style to
- 308:ir_heat.c     **** // follow better the mixed C-assembly code in the
- 309:ir_heat.c     **** // Program Memory window
- 310:ir_heat.c     **** //
- 311:ir_heat.c     **** void my_function(void) {  // Put the open brace '{' here
- 1490               		"Counter: %i; \n"
- 1491               		.text
- 1493 07ba DF93      	.global	main
- 1495 07be CDB7      	main:
- 1497               	.LM115:
- 1498               	.LFBB18:
- 312:ir_heat.c     **** 
- 313:ir_heat.c     ****    asm("nop");          // Inline assembly example
- 1499               	
- 1500               		push r28
- 1501               		in r28,__SP_L__
- 1502               		in r29,__SP_H__
- 1503 07c2 0000      		sbiw r28,21
- 1504               		in __tmp_reg__,__SREG__
- 1505               		cli
- 314:ir_heat.c     **** }
- 1506               	_SP_H__,r29
- 1507               		out __SREG__,__tmp_reg__
- 1508               		out __SP_L__,r28
- 1509 07c4 CF91      	/* prologue: function */
- 1510 07c6 DF91      	/* frame size = 21 */
- 1512               	.LM116:
- 1513               		ldi r30,lo8(36)
- 1514               		ldi r31,hi8(36)
- 1515               		ldi r24,lo8(-64)
- 1516 0030 0A53 7461 		st Z,r24
- 1516      7274 00
- 1518 0037 4572 726F 	.LM117:
- 1518      7220 5465 
- 1518      6D70 3D30 
- 1518      00
- 1519               		ldi r30,lo8(39)
- 1520 0044 5465 6D70 		ldi r31,hi8(39)
- 1520      3A20 2569 
- 1520      2C20 00
- 1521               		ldi r24,lo8(8)
- 1522 004f 736C 6F70 		st Z,r24
- 1522      655F 7261 
- 1522      773A 2025 
- 1522      692C 2073 
- 1522      6C6F 7065 
- 1524 0076 416D 6269 	.LM118:
- 1524      656E 743A 
- 1524      2025 690A 
- 1524      00
- 1525               		ldi r30,lo8(42)
- 1526 0083 5465 6D70 		ldi r31,hi8(42)
- 1526      6572 6174 
- 1526      7572 6520 
- 1526      5072 6F74 
- 1526      6563 7420 
- 1527               		ldi r24,lo8(24)
- 1528 00a1 5465 6D70 		st Z,r24
- 1528      6572 6174 
- 1528      7572 6520 
- 1528      5072 6F74 
- 1528      6563 7420 
- 1530 00bf 5465 6D70 	.LM119:
- 1530      6572 6174 
- 1530      7572 6520 
- 1530      5072 6F74 
- 1530      6563 7420 
- 1531               		ldi r30,lo8(37)
- 1532 00dd 5465 6D70 		ldi r31,hi8(37)
- 1532      6572 6174 
- 1532      7572 6520 
- 1532      5072 6F74 
- 1532      6563 7420 
- 1533               		ldi r24,lo8(63)
- 1534 00fb 5465 6D70 		st Z,r24
- 1534      6572 6174 
- 1534      7572 6520 
- 1534      5072 6F74 
- 1534      6563 7420 
- 1536 0119 5465 6D70 	.LM120:
- 1536      6572 6174 
- 1536      7572 6520 
- 1536      5072 6F74 
- 1536      6563 7420 
- 1537               		ldi r30,lo8(40)
- 1538 013c 436F 756E 		ldi r31,hi8(40)
- 1538      7465 723A 
- 1538      2025 693B 
- 1538      200A 00
- 1539               		ldi r24,lo8(-9)
- 1540               		st Z,r24
- 1542               	.LM121:
- 1543               		ldi r30,lo8(43)
- 315:ir_heat.c     **** 
- 316:ir_heat.c     **** 
+ 288:ir_heat.c     **** 	ret = i2c_rep_start(MLX90614_READ);
+ 1387               	09:
+ 1388               		ldd r24,Y+5
+ 1389 0740 85EB      		ldd r25,Y+6
+ 1390 0742 90E0      		tst r25
+ 1391 0744 0E94 0000 		brge .L55
+ 1392 0748 8C83      		std Y+15,__zero_reg__
+ 289:ir_heat.c     **** 	if(ret) {
+ 1393               	+14,__zero_reg__
+ 1394               		rjmp .L56
+ 1395 074a 8C81      	.L55:
+ 1397 074e 01F0      	.LM110:
+ 290:ir_heat.c     **** 		i2c_rep_start(MLX90614_READ);
+ 1398               	r24,Y+5
+ 1399               		ldd r25,Y+6
+ 1400 0750 85EB      		ldi r18,lo8(5)
+ 1401 0752 90E0      		ldi r19,hi8(5)
+ 1402 0754 0E94 0000 		movw r22,r18
+ 1403               		call __udivmodhi4
+ 291:ir_heat.c     ****    }
+ 292:ir_heat.c     **** 
+ 293:ir_heat.c     **** 	lo = i2c_read_ack();
+ 1404               	r24,r22
+ 1405               		movw r18,r24
+ 1406 0758 0E94 0000 		subi r18,lo8(-(-2731))
+ 1407 075c 8B83      		sbci r19,hi8(-(-2731))
+ 294:ir_heat.c     **** 	hi = i2c_read_ack();
+ 1408               	 Y+15,r19
+ 1409               		std Y+14,r18
+ 1410 075e 0E94 0000 	.L56:
+ 1411 0762 8A83      		ldd r24,Y+14
+ 295:ir_heat.c     **** 	raw = (uint16_t)(hi<<8)+lo;
+ 1412               	 r25,Y+15
+ 1413               	/* epilogue start */
+ 1415 0766 882F      	.LM111:
+ 1416 0768 90E0      		adiw r28,15
+ 1417 076a 982F      		in __tmp_reg__,__SREG__
+ 1418 076c 8827      		cli
+ 1419 076e 9C01      		out __SP_H__,r29
+ 1420 0770 8B81      		out __SREG__,__tmp_reg__
+ 1421 0772 882F      		out __SP_L__,r28
+ 1422 0774 90E0      		pop r28
+ 1423 0776 820F      		pop r29
+ 1424 0778 931F      		ret
+ 296:ir_heat.c     **** 	//printf("0x%04x\n", raw);
+ 297:ir_heat.c     **** 	pec = i2c_read_ack();
+ 1427               	,2)",128,0,0,4
+ 298:ir_heat.c     **** 	
+ 299:ir_heat.c     **** 	i2c_stop();
+ 1431               	abs	"pec_read:(0,17)=ar(0,18)=r(0,18);0;-1;;0;5;(4,2)",128,0,0,7
+ 300:ir_heat.c     **** 	if(raw & 0x8000) return 0;
+ 1434               	cope15:
+ 1435               		.lcomm last.1918,1
+ 1436 0788 8D81      		.data
+ 1437 078a 9E81      	.LC5:
+ 1438 078c 9923      		.string	">>> Relais ON"
+ 1439 078e 04F4      	.LC6:
+ 1440 0790 1F86      		.string	">>> Relais OFF"
+ 1441 0792 1E86      		.text
+ 301:ir_heat.c     **** 	
+ 302:ir_heat.c     **** 	return (raw / 5 - 2731);
+ 1444               	t_relais
+ 1446 0796 8D81      	set_relais:
+ 1448 079a 25E0      	.LM112:
+ 1449 079c 30E0      	.LFBB16:
+ 1450 079e B901      		push r29
+ 1451 07a0 0E94 0000 		push r28
+ 1452 07a4 CB01      		rcall .
+ 1453 07a6 9C01      		in r28,__SP_L__
+ 1454 07a8 2B5A      		in r29,__SP_H__
+ 1455 07aa 3A40      	/* prologue: function */
+ 1456 07ac 3F87      	/* frame size = 2 */
+ 1457 07ae 2E87      		std Y+2,r25
+ 1458               		std Y+1,r24
+ 1460 07b2 9F85      	.LM113:
+ 1461               		ldd r24,Y+1
+ 303:ir_heat.c     **** }
+ 1462               	 r24,0
+ 1463               		breq .L59
+ 1465 07b6 0FB6      	.LM114:
+ 1466 07b8 F894      		lds r24,last.1918
+ 1467 07ba DEBF      		mov r18,r24
+ 1468 07bc 0FBE      		ldi r19,lo8(0)
+ 1469 07be CDBF      		ldd r24,Y+1
+ 1470 07c0 CF91      		ldd r25,Y+2
+ 1471 07c2 DF91      		cp r18,r24
+ 1472 07c4 0895      		cpc r19,r25
+ 1473               		breq .L60
+ 1474               		ldi r24,lo8(.LC5)
+ 1475               		ldi r25,hi8(.LC5)
+ 1476               		call puts
+ 1477               	.L60:
+ 1479               	.LM115:
+ 1480               		ldi r26,lo8(37)
+ 1481               		ldi r27,hi8(37)
+ 1482               		ldi r30,lo8(37)
+ 1483               		ldi r31,hi8(37)
+ 1484               		ld r24,Z
+ 1485               		ori r24,lo8(64)
+ 1486 0020 3E3E 3E20 		st X,r24
+ 1486      5265 6C61 
+ 1486      6973 204F 
+ 1486      4E00 
+ 1487               		rjmp .L61
+ 1488 002e 3E3E 3E20 	.L59:
+ 1488      5265 6C61 
+ 1488      6973 204F 
+ 1488      4646 00
+ 1490               	.LM116:
+ 1491               		lds r24,last.1918
+ 1492               		mov r18,r24
+ 1493               		ldi r19,lo8(0)
+ 1494               		ldd r24,Y+1
+ 304:ir_heat.c     **** 
+ 305:ir_heat.c     **** void set_relais(on) {
+ 1495               	,r25
+ 1496               		breq .L62
+ 1497               		ldi r24,lo8(.LC6)
+ 1498 07c6 DF93      		ldi r25,hi8(.LC6)
+ 1499 07c8 CF93      		call puts
+ 1500 07ca 00D0      	.L62:
+ 1502 07ce DEB7      	.LM117:
+ 1503               		ldi r26,lo8(37)
+ 1504               		ldi r27,hi8(37)
+ 1505 07d0 9A83      		ldi r30,lo8(37)
+ 1506 07d2 8983      		ldi r31,hi8(37)
+ 306:ir_heat.c     **** 	static uint8_t last = 0;
+ 307:ir_heat.c     **** 	if(on) {
+ 1507               	ndi r24,lo8(-65)
+ 1508               		st X,r24
+ 1509 07d4 8981      	.L61:
+ 1511 07d8 0097      	.LM118:
+ 1512 07da 01F0      		ldd r24,Y+1
+ 308:ir_heat.c     **** 		if(on != last) printf(">>> Relais ON\n");
+ 1513               	ast.1918,r24
+ 1514               	/* epilogue start */
+ 1516 07e0 282F      	.LM119:
+ 1517 07e2 30E0      		pop __tmp_reg__
+ 1518 07e4 8981      		pop __tmp_reg__
+ 1519 07e6 9A81      		pop r28
+ 1520 07e8 2817      		pop r29
+ 1521 07ea 3907      		ret
+ 1526               	.Lscope16:
+ 309:ir_heat.c     **** 		RELAIS_ON;
+ 1527               	nction:F(0,15)",36,0,0,my_function
+ 1528               	.global	my_function
+ 1530 07f8 B0E0      	my_function:
+ 1532 07fc F0E0      	.LM120:
+ 1533 07fe 8081      	.LFBB17:
+ 1534 0800 8064      		push r29
+ 1535 0802 8C93      		push r28
+ 1536 0804 00C0      		in r28,__SP_L__
+ 1537               		in r29,__SP_H__
+ 310:ir_heat.c     **** 	}
+ 311:ir_heat.c     **** 	else {
+ 312:ir_heat.c     **** 		if(on != last) printf(">>> Relais OFF\n");
+ 1538               	: function */
+ 1539               	/* frame size = 0 */
+ 1541 080a 282F      	.LM121:
+ 1542 080c 30E0      	/* #APP */
+ 1543 080e 8981      	 ;  324 "ir_heat.c" 1
+ 1544 0810 9A81      		nop
+ 1545 0812 2817      	 ;  0 "" 2
+ 1546 0814 3907      	/* epilogue start */
+ 1548 0818 80E0      	.LM122:
+ 1549 081a 90E0      	/* #NOAPP */
+ 1550 081c 0E94 0000 		pop r28
+ 1551               		pop r29
+ 313:ir_heat.c     **** 		RELAIS_OFF;
+ 1552               	_function, .-my_function
+ 1553               	.Lscope17:
+ 1554 0820 A5E2      		.data
+ 1555 0822 B0E0      	.LC7:
+ 1556 0824 E5E2      		.string	"\nStart"
+ 1557 0826 F0E0      	.LC8:
+ 1558 0828 8081      		.string	"Error Temp=0"
+ 1559 082a 8F7B      	.LC9:
+ 1560 082c 8C93      		.string	"Temp: %i, "
+ 1561               	.LC10:
+ 314:ir_heat.c     **** 	}
+ 315:ir_heat.c     **** 	last = on;
+ 1562               	slope_raw: %i, slope: %i, slope2: %i, "
+ 1563               	.LC11:
+ 1564 082e 8981      		.string	"Ambient: %i\n"
+ 1565 0830 8093 0000 	.LC12:
+ 1566               		.string	"Temperature Protect Rule 48, "
+ 316:ir_heat.c     **** }
+ 1567               	:
+ 1568               		.string	"Temperature Protect Rule 45, "
+ 1569 0834 0F90      	.LC14:
+ 1570 0836 0F90      		.string	"Temperature Protect Rule 40, "
+ 1571 0838 CF91      	.LC15:
+ 1572 083a DF91      		.string	"Temperature Protect Rule 35, "
+ 1573 083c 0895      	.LC16:
+ 1574               		.string	"Temperature Protect Rule 30, "
+ 1575               	.LC17:
+ 1576               		.string	"Temperature Protect General Rule, "
+ 1577               	.LC18:
+ 1578               		.string	"Counter: %i; \n"
+ 1579               		.text
+ 1581               	.global	main
  317:ir_heat.c     **** 
- 318:ir_heat.c     **** 
- 319:ir_heat.c     **** // ***********************************************************
- 320:ir_heat.c     **** // Main program
+ 318:ir_heat.c     **** // It is recommended to use this coding style to
+ 319:ir_heat.c     **** // follow better the mixed C-assembly code in the
+ 320:ir_heat.c     **** // Program Memory window
  321:ir_heat.c     **** //
- 322:ir_heat.c     **** int main(void) {
- 1544               	 Z,r24
- 1546               	.LM122:
- 1547 07ca DF93      		ldi r30,lo8(100)
- 1548 07cc CF93      		ldi r31,hi8(100)
- 1549 07ce CDB7      		ld r18,Z
- 1551 07d2 6597      	.LM123:
- 1552 07d4 0FB6      	/* #APP */
- 1553 07d6 F894      	 ;  334 "ir_heat.c" 1
- 1554 07d8 DEBF      		wdr
- 1555 07da 0FBE      	 ;  0 "" 2
- 1557               	.LM124:
- 1558               	/* #NOAPP */
+ 322:ir_heat.c     **** void my_function(void) {  // Put the open brace '{' here
+ 1583               	,0,333,.LM123-.LFBB18
+ 1584               	.LM123:
+ 1585               	.LFBB18:
+ 1586 083e DF93      		push r29
+ 1587 0840 CF93      		push r28
+ 1588 0842 CDB7      		in r28,__SP_L__
+ 1589 0844 DEB7      		in r29,__SP_H__
+ 1590               		sbiw r28,21
+ 1591               		in __tmp_reg__,__SREG__
  323:ir_heat.c     **** 
- 324:ir_heat.c     **** 	DDRB = 0x00 | (1<<RELAIS) | (1<<BUZZER);
- 1559               	)
- 1560               		ldi r25,hi8(24)
- 1561 07de E4E2      		ldi r18,lo8(40)
- 1562 07e0 F0E0      	/* #APP */
- 1563 07e2 80EC      	 ;  335 "ir_heat.c" 1
- 1564 07e4 8083      		in __tmp_reg__,__SREG__
- 325:ir_heat.c     **** 	DDRC = 0x00 | (1<<FLASH_LED);
- 1565               	wdr
- 1566               		sts 96,r24
- 1567 07e6 E7E2      		out __SREG__,__tmp_reg__
- 1568 07e8 F0E0      		sts 96,r18
- 1569 07ea 88E0      		
- 1570 07ec 8083      	 ;  0 "" 2
- 326:ir_heat.c     **** 	DDRD = 0x00 | (1<<STATUS_LED1) | (1<<STATUS_LED2);
- 1571               	n	68,0,337,.LM125-.LFBB18
- 1572               	.LM125:
- 1573 07ee EAE2      	/* #NOAPP */
- 1574 07f0 F0E0      		call UART_first_init
- 1576 07f4 8083      	.LM126:
+ 324:ir_heat.c     ****    asm("nop");          // Inline assembly example
+ 1592               	 __SP_H__,r29
+ 1593               		out __SREG__,__tmp_reg__
+ 1594               		out __SP_L__,r28
+ 1595               	/* prologue: function */
+ 1596 0846 0000      	/* frame size = 21 */
+ 1598               	.LM124:
+ 325:ir_heat.c     **** }
+ 1599               	0,lo8(36)
+ 1600               		ldi r31,hi8(36)
+ 1601               		ldi r24,lo8(-64)
+ 1602 0848 CF91      		st Z,r24
+ 1604 084c 0895      	.LM125:
+ 1605               		ldi r30,lo8(39)
+ 1606               		ldi r31,hi8(39)
+ 1607               		ldi r24,lo8(8)
+ 1608               		st Z,r24
+ 1610               	.LM126:
+ 1611 0044 4572 726F 		ldi r30,lo8(42)
+ 1611      7220 5465 
+ 1611      6D70 3D30 
+ 1611      00
+ 1612               		ldi r31,hi8(42)
+ 1613 0051 5465 6D70 		ldi r24,lo8(24)
+ 1613      3A20 2569 
+ 1613      2C20 00
+ 1614               		st Z,r24
+ 1616               	.LM127:
+ 1617 0083 416D 6269 		ldi r30,lo8(37)
+ 1617      656E 743A 
+ 1617      2025 690A 
+ 1617      00
+ 1618               		ldi r31,hi8(37)
+ 1619 0090 5465 6D70 		ldi r24,lo8(63)
+ 1619      6572 6174 
+ 1619      7572 6520 
+ 1619      5072 6F74 
+ 1619      6563 7420 
+ 1620               		st Z,r24
+ 1622               	.LM128:
+ 1623 00cc 5465 6D70 		ldi r30,lo8(40)
+ 1623      6572 6174 
+ 1623      7572 6520 
+ 1623      5072 6F74 
+ 1623      6563 7420 
+ 1624               		ldi r31,hi8(40)
+ 1625 00ea 5465 6D70 		ldi r24,lo8(-9)
+ 1625      6572 6174 
+ 1625      7572 6520 
+ 1625      5072 6F74 
+ 1625      6563 7420 
+ 1626               		st Z,r24
+ 1628               	.LM129:
+ 1629 0126 5465 6D70 		ldi r30,lo8(43)
+ 1629      6572 6174 
+ 1629      7572 6520 
+ 1629      5072 6F74 
+ 1629      6563 7420 
+ 1630               		ldi r31,hi8(43)
+ 1631 0149 436F 756E 		ldi r24,lo8(-25)
+ 1631      7465 723A 
+ 1631      2025 693B 
+ 1631      200A 00
+ 1632               		st Z,r24
+ 1634               	.LM130:
+ 1635               		ldi r30,lo8(100)
+ 1636               		ldi r31,hi8(100)
+ 326:ir_heat.c     **** 
  327:ir_heat.c     **** 
- 328:ir_heat.c     **** 	PORTB = ~((1<<RELAIS) | (1<<BUZZER));
- 1577               	i2c_init
- 1579 07f6 E5E2      	.LM127:
- 1580 07f8 F0E0      		sts interval,__zero_reg__
- 1582 07fc 8083      	.LM128:
- 329:ir_heat.c     **** 	PORTC = ~(1<<FLASH_LED);
- 1583               	30,lo8(177)
- 1584               		ldi r31,hi8(177)
- 1585 07fe E8E2      		ldi r24,lo8(7)
- 1586 0800 F0E0      		st Z,r24
- 1588 0804 8083      	.LM129:
- 330:ir_heat.c     **** 	PORTD = ~((1<<STATUS_LED1) | (1<<STATUS_LED2) | (1<<FLASH_LED));
- 1589               	30,lo8(112)
- 1590               		ldi r31,hi8(112)
- 1591 0806 EBE2      		ldi r24,lo8(1)
- 1592 0808 F0E0      		st Z,r24
- 1594 080c 8083      	.LM130:
- 331:ir_heat.c     **** 
- 332:ir_heat.c     **** 	PRR != ~(1<<PRTWI);
- 1595               	30,lo8(68)
- 1596               		ldi r31,hi8(68)
- 1597 080e E4E6      		st Z,__zero_reg__
- 1599 0812 2081      	.LM131:
- 333:ir_heat.c     **** 
- 334:ir_heat.c     **** 	wdt_reset();
- 1600               	r30,lo8(69)
- 1601               		ldi r31,hi8(69)
- 1602               		ldi r24,lo8(3)
- 1603               		st Z,r24
- 1605               	.LM132:
- 335:ir_heat.c     **** 	wdt_enable(WDTO_4S);
- 1606               	30,lo8(110)
- 1607               		ldi r31,hi8(110)
- 1608               		ldi r24,lo8(1)
- 1609 0816 88E1      		st Z,r24
- 1611 081a 28E2      	.LM133:
- 1612               		ldi r30,lo8(105)
- 1613               		ldi r31,hi8(105)
- 1614 081c 0FB6      		ldi r24,lo8(2)
- 1615 081e F894      		st Z,r24
- 1617 0822 8093 6000 	.LM134:
- 1618 0826 0FBE      		ldi r30,lo8(61)
- 1619 0828 2093 6000 		ldi r31,hi8(61)
- 1620               		ldi r24,lo8(1)
- 1621               		st Z,r24
- 336:ir_heat.c     **** 	
- 337:ir_heat.c     **** 	UART_first_init();
- 1622               	,.LM135-.LFBB18
- 1623               	.LM135:
- 1624               		ldi r26,lo8(43)
- 1625 082c 0E94 0000 		ldi r27,hi8(43)
- 338:ir_heat.c     **** 	i2c_init();
- 1626               	 r30,lo8(43)
- 1627               		ldi r31,hi8(43)
- 1628 0830 0E94 0000 		ld r24,Z
- 339:ir_heat.c     **** 	
- 340:ir_heat.c     **** 	interval=0;
- 1629               	i r24,lo8(16)
- 1630               		st X,r24
- 341:ir_heat.c     **** 	// Timer 2 config (RTC)
- 342:ir_heat.c     ****    TCCR2B = (1<<CS22) | (1<<CS21) | (1<<CS20);	// clk/256
- 1632               	136:
- 1633               		ldi r26,lo8(43)
- 1634 0838 E1EB      		ldi r27,hi8(43)
- 1635 083a F0E0      		ldi r30,lo8(43)
- 1636 083c 87E0      		ldi r31,hi8(43)
- 1637 083e 8083      		ld r24,Z
- 343:ir_heat.c     ****    TIMSK2 = (1<<TOIE2);
- 1638               	r24,lo8(-9)
- 1639               		st X,r24
- 1641 0842 F0E0      	.LM137:
- 1642 0844 81E0      		ldi r24,lo8(.LC4)
- 1643 0846 8083      		ldi r25,hi8(.LC4)
+ 328:ir_heat.c     **** 
+ 329:ir_heat.c     **** 
+ 330:ir_heat.c     **** // ***********************************************************
+ 331:ir_heat.c     **** // Main program
+ 332:ir_heat.c     **** //
+ 333:ir_heat.c     **** int main(void) {
+ 1637               	B18
+ 1638               	.LM131:
+ 1639               	/* #APP */
+ 1640 084e DF93      	 ;  345 "ir_heat.c" 1
+ 1641 0850 CF93      		wdr
+ 1642 0852 CDB7      	 ;  0 "" 2
+ 1644 0856 6597      	.LM132:
+ 1645 0858 0FB6      	/* #NOAPP */
+ 1646 085a F894      		ldi r24,lo8(24)
+ 1647 085c DEBF      		ldi r25,hi8(24)
+ 1648 085e 0FBE      		ldi r18,lo8(41)
+ 1649 0860 CDBF      	/* #APP */
+ 1650               	 ;  346 "ir_heat.c" 1
+ 1651               		in __tmp_reg__,__SREG__
+ 334:ir_heat.c     **** 
+ 335:ir_heat.c     **** 	DDRB = 0x00 | (1<<RELAIS) | (1<<BUZZER);
+ 1652               	96,r24
+ 1653               		out __SREG__,__tmp_reg__
+ 1654 0862 E4E2      		sts 96,r18
+ 1655 0864 F0E0      		
+ 1656 0866 80EC      	 ;  0 "" 2
+ 336:ir_heat.c     **** 	DDRC = 0x00 | (1<<FLASH_LED);
+ 1658               	:
+ 1659               	/* #NOAPP */
+ 1660 086a E7E2      		call UART_first_init
+ 1662 086e 88E0      	.LM134:
+ 1663 0870 8083      		call i2c_init
+ 337:ir_heat.c     **** 	DDRD = 0x00 | (1<<STATUS_LED1) | (1<<STATUS_LED2);
+ 1664               	n	68,0,351,.LM135-.LFBB18
+ 1665               	.LM135:
+ 1666 0872 EAE2      		sts interval,__zero_reg__
+ 1668 0876 88E1      	.LM136:
+ 1669 0878 8083      		ldi r30,lo8(177)
+ 338:ir_heat.c     **** 
+ 339:ir_heat.c     **** 	PORTB = ~((1<<RELAIS) | (1<<BUZZER));
+ 1670               	31,hi8(177)
+ 1671               		ldi r24,lo8(7)
+ 1672 087a E5E2      		st Z,r24
+ 1674 087e 8FE3      	.LM137:
+ 1675 0880 8083      		ldi r30,lo8(112)
+ 340:ir_heat.c     **** 	PORTC = ~(1<<FLASH_LED);
+ 1676               	31,hi8(112)
+ 1677               		ldi r24,lo8(1)
+ 1678 0882 E8E2      		st Z,r24
+ 1680 0886 87EF      	.LM138:
+ 1681 0888 8083      		ldi r30,lo8(68)
+ 341:ir_heat.c     **** 	PORTD = ~((1<<STATUS_LED1) | (1<<STATUS_LED2) | (1<<FLASH_LED));
+ 1682               	31,hi8(68)
+ 1683               		st Z,__zero_reg__
+ 1685 088c F0E0      	.LM139:
+ 1686 088e 87EE      		ldi r30,lo8(69)
+ 1687 0890 8083      		ldi r31,hi8(69)
+ 342:ir_heat.c     **** 
+ 343:ir_heat.c     **** 	PRR != ~(1<<PRTWI);
+ 1688               	24,lo8(3)
+ 1689               		st Z,r24
+ 1691 0894 F0E0      	.LM140:
+ 1692 0896 2081      		ldi r30,lo8(110)
  344:ir_heat.c     **** 
- 345:ir_heat.c     **** 	TCCR0A = 0;
- 1644               	puts
- 1646 0848 E4E4      	.LM138:
- 1647 084a F0E0      		ldi r24,lo8(0)
- 1648 084c 1082      		ldi r25,hi8(0)
- 346:ir_heat.c     **** 	TCCR0B = (0<<CS02) | (1<<CS01) | (1<<CS00);
- 1649               	 set_relais
- 1651 084e E5E4      	.LM139:
- 1652 0850 F0E0      		sts mode,__zero_reg__
- 1654 0854 8083      	.LM140:
- 347:ir_heat.c     **** 	TIMSK0 = (1<<TOIE0);
- 1655               	+4,__zero_reg__
- 1657 0856 EEE6      	.LM141:
- 1658 0858 F0E0      		ldi r24,lo8(-1)
- 1659 085a 81E0      		std Y+3,r24
- 348:ir_heat.c     **** 	
- 349:ir_heat.c     **** 	EICRA = (1<<ISC01);
- 1661               	:
- 1662               		std Y+12,__zero_reg__
- 1663 085e E9E6      		std Y+11,__zero_reg__
- 1665 0862 82E0      	.LM143:
- 1666 0864 8083      	/* #APP */
- 350:ir_heat.c     **** 	EIMSK = (1<<INT0);
- 1667               	8 "ir_heat.c" 1
- 1668               		sei
- 1669 0866 EDE3      	 ;  0 "" 2
- 1670 0868 F0E0      	/* #NOAPP */
- 1671 086a 81E0      	.L90:
- 351:ir_heat.c     **** 	
- 352:ir_heat.c     **** 
- 353:ir_heat.c     **** 	STATUS_LED1_ON;
- 1673               	:
- 1674               		lds r24,interval
- 1675 086e ABE2      		cpi r24,lo8(16)
- 1676 0870 B0E0      		brsh .+2
- 1677 0872 EBE2      		rjmp .L65
- 1679 0876 8081      	.LM145:
- 1680 0878 8061      	/* #APP */
- 1681 087a 8C93      	 ;  372 "ir_heat.c" 1
- 354:ir_heat.c     **** 	STATUS_LED2_OFF;
- 1682               	0 "" 2
- 1684 087c ABE2      	.LM146:
- 1685 087e B0E0      	/* #NOAPP */
- 1686 0880 EBE2      		sts interval,__zero_reg__
- 1688 0884 8081      	.LM147:
- 1689 0886 877F      		std Y+4,__zero_reg__
- 355:ir_heat.c     **** 	printf("\nStart\n");
- 1691               	ldd r24,Y+11
- 1692               		ldd r25,Y+12
- 1693 088a 80E0      		swap r25
- 1694 088c 90E0      		swap r24
- 1695 088e 0E94 0000 		andi r24,0x0f
- 356:ir_heat.c     **** 	set_relais(0);
- 1696               	r24,r25
- 1697               		andi r25,0x0f
- 1698 0892 80E0      		eor r24,r25
- 1699 0894 90E0      		std Y+14,r25
- 1700 0896 0E94 0000 		std Y+13,r24
- 357:ir_heat.c     **** 	mode = MODE_OFF;
- 1701               	bn	68,0,379,.LM149-.LFBB18
- 1702               	.LM149:
- 1703 089a 1092 0000 		std Y+12,__zero_reg__
- 358:ir_heat.c     **** 	
- 359:ir_heat.c     **** 	uint16_t temp, temp_sum;
- 360:ir_heat.c     **** 	int16_t	lookahead;
- 361:ir_heat.c     **** 	int16_t 	slope;
- 362:ir_heat.c     **** 	int16_t	slope_raw;
- 363:ir_heat.c     **** 	uint8_t	count=0;
- 1704               	d Y+11,__zero_reg__
- 1706 089e 1C82      	.LM150:
- 364:ir_heat.c     **** 	uint8_t  last_interval = 0xff;
- 1707               	d r24,Y+13
- 1708               		ldd r25,Y+14
- 1709 08a0 8FEF      		sbiw r24,0
- 1710 08a2 8B83      		brne .L66
- 365:ir_heat.c     **** 	
- 366:ir_heat.c     **** 	temp_sum = 0;
- 1711               	abn	68,0,383,.LM151-.LFBB18
- 1712               	.LM151:
- 1713 08a4 1C86      		rcall .
- 1714 08a6 1B86      		in r30,__SP_L__
- 367:ir_heat.c     **** 	
- 368:ir_heat.c     **** 	sei();
- 1715               	r31,__SP_H__
- 1716               		adiw r30,1
- 1717               		ldi r24,lo8(.LC5)
- 1718               		ldi r25,hi8(.LC5)
- 1719 08a8 7894      		std Z+1,r25
- 1720               		st Z,r24
- 1721               		call printf
- 1722               		pop __tmp_reg__
- 369:ir_heat.c     **** 
- 370:ir_heat.c     ****    while(1) {             // Infinite loop; define here the
- 371:ir_heat.c     ****    	if(!(interval < 16)) {
- 1723               	mp_reg__
- 1724               		rjmp .L67
- 1725 08aa 8091 0000 	.L66:
- 1727 08b0 00F4      	.LM152:
- 1728 08b2 00C0      		rcall .
- 372:ir_heat.c     ****    		wdt_reset();
- 1729               	 .
- 1730               		in r30,__SP_L__
- 1731               		in r31,__SP_H__
- 1732               		adiw r30,1
- 1733 08b4 A895      		ldi r24,lo8(.LC6)
- 1734               		ldi r25,hi8(.LC6)
- 373:ir_heat.c     ****    		interval=0;
- 1735               	+1,r25
- 1736               		st Z,r24
- 1737               		ldd r24,Y+13
- 1738 08b6 1092 0000 		ldd r25,Y+14
- 374:ir_heat.c     ****    		count=0;
- 1739               	 Z+3,r25
- 1740               		std Z+2,r24
- 1741 08ba 1C82      		call printf
- 375:ir_heat.c     ****    		//printf("Messen\n");
- 376:ir_heat.c     ****    		// Temperatur einlesen
- 377:ir_heat.c     **** //	      temp = get_temperature(ADR_T_OBJ1);
- 378:ir_heat.c     **** 			temp = temp_sum >> 4;
- 1742               	p __tmp_reg__
- 1743               		pop __tmp_reg__
- 1744 08bc 8B85      		pop __tmp_reg__
- 1745 08be 9C85      		pop __tmp_reg__
- 1747 08c2 8295      	.LM153:
- 1748 08c4 8F70      		ldd r24,Y+13
- 1749 08c6 8927      		ldd r25,Y+14
- 1750 08c8 9F70      		call add_value
- 1752 08cc 9E87      	.LM154:
- 1753 08ce 8D87      		call get_slope
- 379:ir_heat.c     **** 			temp_sum = 0;
- 1754               	
- 1755               		std Y+5,r24
- 1757 08d2 1B86      	.LM155:
- 380:ir_heat.c     **** 	      //printf("Temp: %i\n", temp);
- 381:ir_heat.c     **** 	      if(temp==0) {
- 1758               	d r18,Y+7
- 1759               		ldd r19,Y+8
- 1760 08d4 8D85      		movw r24,r18
- 1761 08d6 9E85      		lsl r24
- 1762 08d8 0097      		rol r25
- 1763 08da 01F4      		add r24,r18
- 382:ir_heat.c     **** 	      // error!
- 383:ir_heat.c     **** 	      	printf("Error Temp=0");
- 1764               	25,r19
- 1765               		movw r18,r24
- 1766 08dc 00D0      		lsl r18
- 1767 08de EDB7      		rol r19
- 1768 08e0 FEB7      		lsl r18
- 1769 08e2 3196      		rol r19
- 1770 08e4 80E0      		movw r20,r24
- 1771 08e6 90E0      		add r20,r18
- 1772 08e8 9183      		adc r21,r19
- 1773 08ea 8083      		ldd r24,Y+5
- 1774 08ec 0E94 0000 		ldd r25,Y+6
- 1775 08f0 0F90      		movw r18,r24
- 1776 08f2 0F90      		lsl r18
- 1777 08f4 00C0      		rol r19
- 1778               		movw r24,r18
- 384:ir_heat.c     **** 	      }
- 385:ir_heat.c     **** 	      else {
- 386:ir_heat.c     ****    	   	printf("Temp: %i, ", temp);
- 1779               	25
- 1780               		lsl r24
- 1781 08f6 00D0      		rol r25
- 1782 08f8 00D0      		add r24,r18
- 1783 08fa EDB7      		adc r25,r19
- 1784 08fc FEB7      		add r24,r20
- 1785 08fe 3196      		adc r25,r21
- 1786 0900 80E0      		std Y+21,r25
- 1787 0902 90E0      		std Y+20,r24
- 1788 0904 9183      		ldd r24,Y+20
- 1789 0906 8083      		ldd r25,Y+21
- 1790 0908 8D85      		tst r25
- 1791 090a 9E85      		brge .L68
- 1792 090c 9383      		ldd r18,Y+20
- 1793 090e 8283      		ldd r19,Y+21
- 1794 0910 0E94 0000 		subi r18,lo8(-(15))
- 1795 0914 0F90      		sbci r19,hi8(-(15))
- 1796 0916 0F90      		std Y+21,r19
- 1797 0918 0F90      		std Y+20,r18
- 1798 091a 0F90      	.L68:
- 387:ir_heat.c     ****    	   	// Temperaturverlauf auswerten
- 388:ir_heat.c     ****    	   	add_value(temp);
- 1799               	25,Y+21
- 1800               		asr r25
- 1801 091c 8D85      		ror r24
- 1802 091e 9E85      		asr r25
- 1803 0920 0E94 0000 		ror r24
- 389:ir_heat.c     ****    	   	//print_array();
- 390:ir_heat.c     ****    	   	slope_raw = get_slope();
- 1804               	r25
- 1805               		ror r24
- 1806 0924 0E94 0000 		asr r25
- 1807 0928 9E83      		ror r24
- 1808 092a 8D83      		std Y+8,r25
- 391:ir_heat.c     **** 				//if(slope_raw<0) slope_raw = 0;
- 392:ir_heat.c     ****    	   	slope = (15*slope + 10*slope_raw)/16;
- 1809               	Y+7,r24
- 1811 092c 2F81      	.LM156:
- 1812 092e 3885      		lds r18,slope2
- 1813 0930 C901      		lds r19,(slope2)+1
- 1814 0932 880F      		in r24,__SP_L__
- 1815 0934 991F      		in r25,__SP_H__
- 1816 0936 820F      		sbiw r24,8
- 1817 0938 931F      		in __tmp_reg__,__SREG__
- 1818 093a 9C01      		cli
- 1819 093c 220F      		out __SP_H__,r25
- 1820 093e 331F      		out __SREG__,__tmp_reg__
- 1821 0940 220F      		out __SP_L__,r24
- 1822 0942 331F      		in r30,__SP_L__
- 1823 0944 AC01      		in r31,__SP_H__
- 1824 0946 420F      		adiw r30,1
- 1825 0948 531F      		ldi r24,lo8(.LC7)
- 1826 094a 8D81      		ldi r25,hi8(.LC7)
- 1827 094c 9E81      		std Z+1,r25
- 1828 094e 9C01      		st Z,r24
- 1829 0950 220F      		ldd r24,Y+5
- 1830 0952 331F      		ldd r25,Y+6
- 1831 0954 C901      		std Z+3,r25
- 1832 0956 880F      		std Z+2,r24
- 1833 0958 991F      		ldd r24,Y+7
- 1834 095a 880F      		ldd r25,Y+8
- 1835 095c 991F      		std Z+5,r25
- 1836 095e 820F      		std Z+4,r24
- 1837 0960 931F      		std Z+7,r19
- 1838 0962 840F      		std Z+6,r18
- 1839 0964 951F      		call printf
- 1840 0966 9D8B      		in r18,__SP_L__
- 1841 0968 8C8B      		in r19,__SP_H__
- 1842 096a 8C89      		subi r18,lo8(-(8))
- 1843 096c 9D89      		sbci r19,hi8(-(8))
- 1844 096e 9923      		in __tmp_reg__,__SREG__
- 1845 0970 04F4      		cli
- 1846 0972 2C89      		out __SP_H__,r19
- 1847 0974 3D89      		out __SREG__,__tmp_reg__
- 1848 0976 215F      		out __SP_L__,r18
- 1850 097a 3D8B      	.LM157:
- 1851 097c 2C8B      		ldd r24,Y+7
- 1852               		ldi r22,lo8(5)
- 1853 097e 8C89      		call lookahead_temp
- 1854 0980 9D89      		std Y+10,r25
- 1855 0982 9595      		std Y+9,r24
- 1857 0986 9595      	.LM158:
- 1858 0988 8795      		ldi r24,lo8(6)
- 1859 098a 9595      		call get_temperature
- 1860 098c 8795      		movw r18,r24
- 1861 098e 9595      		rcall .
- 1862 0990 8795      		rcall .
- 1863 0992 9887      		in r30,__SP_L__
- 1864 0994 8F83      		in r31,__SP_H__
- 393:ir_heat.c     ****    	   	printf("slope_raw: %i, slope: %i, slope2: %i, ", slope_raw, slope, slope2);
- 1865               	+1,r25
- 1866               		st Z,r24
- 1867 0996 2091 0000 		std Z+3,r19
- 1868 099a 3091 0000 		std Z+2,r18
- 1869 099e 8DB7      		call printf
- 1870 09a0 9EB7      		pop __tmp_reg__
- 1871 09a2 0897      		pop __tmp_reg__
- 1872 09a4 0FB6      		pop __tmp_reg__
- 1873 09a6 F894      		pop __tmp_reg__
- 1875 09aa 0FBE      	.LM159:
- 1876 09ac 8DBF      		ldd r24,Y+13
- 1877 09ae EDB7      		ldd r25,Y+14
- 1878 09b0 FEB7      		ldi r19,hi8(481)
- 1879 09b2 3196      		cpi r24,lo8(481)
- 1880 09b4 80E0      		cpc r25,r19
- 1881 09b6 90E0      		brlo .L69
- 1883 09ba 8083      	.LM160:
- 1884 09bc 8D81      		ldd r24,Y+7
- 1885 09be 9E81      		ldd r25,Y+8
- 1886 09c0 9383      		cpi r24,31
- 1887 09c2 8283      		cpc r25,__zero_reg__
- 1888 09c4 8F81      		brge .+2
- 1889 09c6 9885      		rjmp .L67
- 1891 09ca 8483      	.LM161:
- 1892 09cc 3783      		ldi r24,lo8(16)
- 1893 09ce 2683      		sts off_counter,r24
- 1895 09d4 2DB7      	.LM162:
- 1896 09d6 3EB7      		rcall .
- 1897 09d8 285F      		in r30,__SP_L__
- 1898 09da 3F4F      		in r31,__SP_H__
- 1899 09dc 0FB6      		adiw r30,1
- 1900 09de F894      		ldi r24,lo8(.LC9)
- 1901 09e0 3EBF      		ldi r25,hi8(.LC9)
- 1902 09e2 0FBE      		std Z+1,r25
- 1903 09e4 2DBF      		st Z,r24
- 394:ir_heat.c     **** 				lookahead=lookahead_temp(slope, 5);   	   	
- 1904               	p_reg__
- 1905               		rjmp .L67
- 1906 09e6 8F81      	.L69:
- 1908 09ea 0E94 0000 	.LM163:
- 1909 09ee 9A87      		ldd r24,Y+13
- 1910 09f0 8987      		ldd r25,Y+14
- 395:ir_heat.c     ****    	   	//printf("Prognose: %i\n", lookahead);
- 396:ir_heat.c     ****    	   	printf("Ambient: %i\n", get_temperature(ADR_T_A));
- 1911               	8,hi8(451)
- 1912               		cpi r24,lo8(451)
- 1913 09f2 86E0      		cpc r25,r18
- 1914 09f4 0E94 0000 		brlo .L71
- 1916 09fa 00D0      	.LM164:
- 1917 09fc 00D0      		ldd r24,Y+7
- 1918 09fe EDB7      		ldd r25,Y+8
- 1919 0a00 FEB7      		cpi r24,51
- 1920 0a02 3196      		cpc r25,__zero_reg__
- 1921 0a04 80E0      		brge .+2
- 1922 0a06 90E0      		rjmp .L67
- 1924 0a0a 8083      	.LM165:
- 1925 0a0c 3383      		ldi r24,lo8(16)
- 1926 0a0e 2283      		sts off_counter,r24
- 1928 0a14 0F90      	.LM166:
- 1929 0a16 0F90      		rcall .
- 1930 0a18 0F90      		in r30,__SP_L__
- 1931 0a1a 0F90      		in r31,__SP_H__
- 397:ir_heat.c     **** 				
- 398:ir_heat.c     ****    	   	// Relais sperren, wenn ein Wert über dem Grenzwert
- 399:ir_heat.c     **** 	   	   //if((lookahead > t_la_threshold_up) | (temp > t_abs_threshold_up)) off_counter = OFF_COUNT
- 400:ir_heat.c     **** 	   	
- 401:ir_heat.c     **** 	   		if(temp > 480) {
- 1932               	lo8(.LC10)
- 1933               		ldi r25,hi8(.LC10)
- 1934 0a1c 8D85      		std Z+1,r25
- 1935 0a1e 9E85      		st Z,r24
- 1936 0a20 31E0      		call printf
- 1937 0a22 813E      		pop __tmp_reg__
- 1938 0a24 9307      		pop __tmp_reg__
- 1939 0a26 00F0      		rjmp .L67
- 402:ir_heat.c     **** 	   			if(slope > 30) {
- 1940               	stabn	68,0,413,.LM167-.LFBB18
- 1941               	.LM167:
- 1942 0a28 8F81      		ldd r24,Y+13
- 1943 0a2a 9885      		ldd r25,Y+14
- 1944 0a2c 8F31      		ldi r19,hi8(401)
- 1945 0a2e 9105      		cpi r24,lo8(401)
- 1946 0a30 04F4      		cpc r25,r19
- 1947 0a32 00C0      		brlo .L73
- 403:ir_heat.c     **** 	   				off_counter = OFF_COUNTER+1;
- 1948               	68,0,414,.LM168-.LFBB18
- 1949               	.LM168:
- 1950 0a34 80E1      		ldd r24,Y+7
- 1951 0a36 8093 0000 		ldd r25,Y+8
- 404:ir_heat.c     **** 	   				printf("Temperature Protect Rule 48, ");
- 1952               	 r24,61
- 1953               		cpc r25,__zero_reg__
- 1954 0a3a 00D0      		brge .+2
- 1955 0a3c EDB7      		rjmp .L67
- 1957 0a40 3196      	.LM169:
- 1958 0a42 80E0      		ldi r24,lo8(16)
- 1959 0a44 90E0      		sts off_counter,r24
- 1961 0a48 8083      	.LM170:
- 1962 0a4a 0E94 0000 		rcall .
- 1963 0a4e 0F90      		rcall .
- 1964 0a50 0F90      		in r30,__SP_L__
- 1965 0a52 00C0      		in r31,__SP_H__
- 1966               		adiw r30,1
- 405:ir_heat.c     **** 	   			}
- 406:ir_heat.c     **** 	   		}
- 407:ir_heat.c     **** 	   		else if(temp > 450) {
- 1967               	C11)
- 1968               		ldi r25,hi8(.LC11)
- 1969 0a54 8D85      		std Z+1,r25
- 1970 0a56 9E85      		st Z,r24
- 1971 0a58 21E0      		ldd r24,Y+7
- 1972 0a5a 833C      		ldd r25,Y+8
- 1973 0a5c 9207      		std Z+3,r25
- 1974 0a5e 00F0      		std Z+2,r24
- 408:ir_heat.c     **** 	   			if(slope > 50) {
- 1975               	intf
- 1976               		pop __tmp_reg__
- 1977 0a60 8F81      		pop __tmp_reg__
- 1978 0a62 9885      		pop __tmp_reg__
- 1979 0a64 8333      		pop __tmp_reg__
- 1980 0a66 9105      		rjmp .L67
- 1981 0a68 04F4      	.L73:
- 409:ir_heat.c     **** 	   				off_counter = OFF_COUNTER+1;
- 1983               		ldd r24,Y+13
- 1984               		ldd r25,Y+14
- 1985 0a6c 80E1      		ldi r18,hi8(351)
- 1986 0a6e 8093 0000 		cpi r24,lo8(351)
- 410:ir_heat.c     **** 	   				printf("Temperature Protect Rule 45, ");
- 1987               	 r25,r18
- 1988               		brlo .L75
- 1990 0a74 EDB7      	.LM172:
- 1991 0a76 FEB7      		ldd r24,Y+7
- 1992 0a78 3196      		ldd r25,Y+8
- 1993 0a7a 80E0      		cpi r24,81
- 1994 0a7c 90E0      		cpc r25,__zero_reg__
- 1995 0a7e 9183      		brge .+2
- 1996 0a80 8083      		rjmp .L67
- 1998 0a86 0F90      	.LM173:
- 1999 0a88 0F90      		ldi r24,lo8(16)
- 2000 0a8a 00C0      		sts off_counter,r24
- 411:ir_heat.c     **** 	   			}
- 412:ir_heat.c     **** 	   		}
- 413:ir_heat.c     **** 	   		else if(temp > 400) {
- 2002               	.
- 2003               		in r30,__SP_L__
- 2004 0a8c 8D85      		in r31,__SP_H__
- 2005 0a8e 9E85      		adiw r30,1
- 2006 0a90 31E0      		ldi r24,lo8(.LC12)
- 2007 0a92 8139      		ldi r25,hi8(.LC12)
- 2008 0a94 9307      		std Z+1,r25
- 2009 0a96 00F0      		st Z,r24
- 414:ir_heat.c     **** 	   			if(slope > 60) {
- 2010               	intf
- 2011               		pop __tmp_reg__
- 2012 0a98 8F81      		pop __tmp_reg__
- 2013 0a9a 9885      		rjmp .L67
- 2014 0a9c 8D33      	.L75:
- 2016 0aa0 04F4      	.LM175:
- 2017 0aa2 00C0      		ldd r24,Y+13
- 415:ir_heat.c     **** 	   				off_counter = OFF_COUNTER+1;
- 2018               	,Y+14
- 2019               		ldi r19,hi8(301)
- 2020 0aa4 80E1      		cpi r24,lo8(301)
- 2021 0aa6 8093 0000 		cpc r25,r19
- 416:ir_heat.c     **** 	   				printf("Temperature Protect Rule 40, ", slope);
- 2022               	o .L77
- 2024 0aaa 00D0      	.LM176:
- 2025 0aac 00D0      		ldd r24,Y+7
- 2026 0aae EDB7      		ldd r25,Y+8
- 2027 0ab0 FEB7      		cpi r24,121
- 2028 0ab2 3196      		cpc r25,__zero_reg__
- 2029 0ab4 80E0      		brlt .L67
- 2031 0ab8 9183      	.LM177:
- 2032 0aba 8083      		ldi r24,lo8(16)
- 2033 0abc 8F81      		sts off_counter,r24
- 2035 0ac0 9383      	.LM178:
- 2036 0ac2 8283      		rcall .
- 2037 0ac4 0E94 0000 		in r30,__SP_L__
- 2038 0ac8 0F90      		in r31,__SP_H__
- 2039 0aca 0F90      		adiw r30,1
- 2040 0acc 0F90      		ldi r24,lo8(.LC13)
- 2041 0ace 0F90      		ldi r25,hi8(.LC13)
- 2042 0ad0 00C0      		std Z+1,r25
- 2043               		st Z,r24
- 417:ir_heat.c     **** 	   			}
- 418:ir_heat.c     **** 	   		}
- 419:ir_heat.c     **** 	   		else if(temp > 350) {
- 2044               	p_reg__
- 2045               		pop __tmp_reg__
- 2046 0ad2 8D85      		rjmp .L67
- 2047 0ad4 9E85      	.L77:
- 2049 0ad8 8F35      	.LM179:
- 2050 0ada 9207      		ldd r24,Y+7
- 2051 0adc 00F0      		ldd r25,Y+8
- 420:ir_heat.c     **** 	   			if(slope > 80) {
- 2052               	,161
- 2053               		cpc r25,__zero_reg__
- 2054 0ade 8F81      		brlt .L67
- 2056 0ae2 8135      	.LM180:
- 2057 0ae4 9105      		ldi r24,lo8(16)
- 2058 0ae6 04F4      		sts off_counter,r24
- 421:ir_heat.c     **** 	   				off_counter = OFF_COUNTER+1;
- 2060               		rcall .
- 2061               		in r30,__SP_L__
- 2062 0aea 80E1      		in r31,__SP_H__
- 2063 0aec 8093 0000 		adiw r30,1
- 422:ir_heat.c     **** 	   				printf("Temperature Protect Rule 35, ");
- 2064               	 r24,lo8(.LC14)
- 2065               		ldi r25,hi8(.LC14)
- 2066 0af0 00D0      		std Z+1,r25
- 2067 0af2 EDB7      		st Z,r24
- 2068 0af4 FEB7      		call printf
- 2069 0af6 3196      		pop __tmp_reg__
- 2070 0af8 80E0      		pop __tmp_reg__
- 2071 0afa 90E0      	.L67:
- 2073 0afe 8083      	.LM182:
- 2074 0b00 0E94 0000 		lds r24,off_counter
- 2075 0b04 0F90      		tst r24
- 2076 0b06 0F90      		breq .L79
- 2078               	.LM183:
- 423:ir_heat.c     ****                }
- 424:ir_heat.c     **** 	   		}
- 425:ir_heat.c     **** 	   		else if(temp > 300) {
- 2079               	unter
- 2080               		subi r24,lo8(-(-1))
- 2081 0b0a 8D85      		sts off_counter,r24
- 2083 0b0e 31E0      	.LM184:
- 2084 0b10 8D32      		lds r24,mode
- 2085 0b12 9307      		cpi r24,lo8(1)
- 2086 0b14 00F0      		brne .L80
- 426:ir_heat.c     **** 	   			if(slope > 120) {
- 2087               	,lo8(3)
- 2088               		sts mode,r24
- 2089 0b16 8F81      	.L80:
- 2091 0b1a 8937      	.LM185:
- 2092 0b1c 9105      		lds r24,off_counter
- 2093 0b1e 04F0      		mov r18,r24
- 427:ir_heat.c     **** 	   				off_counter = OFF_COUNTER+1;
- 2094               	9,lo8(0)
- 2095               		rcall .
- 2096 0b20 80E1      		rcall .
- 2097 0b22 8093 0000 		in r30,__SP_L__
- 428:ir_heat.c     **** 		   			printf("Temperature Protect Rule 30, ");
- 2098               	r31,__SP_H__
- 2099               		adiw r30,1
- 2100 0b26 00D0      		ldi r24,lo8(.LC15)
- 2101 0b28 EDB7      		ldi r25,hi8(.LC15)
- 2102 0b2a FEB7      		std Z+1,r25
- 2103 0b2c 3196      		st Z,r24
- 2104 0b2e 80E0      		std Z+3,r19
- 2105 0b30 90E0      		std Z+2,r18
- 2106 0b32 9183      		call printf
- 2107 0b34 8083      		pop __tmp_reg__
- 2108 0b36 0E94 0000 		pop __tmp_reg__
- 2109 0b3a 0F90      		pop __tmp_reg__
- 2110 0b3c 0F90      		pop __tmp_reg__
- 2111 0b3e 00C0      		rjmp .L84
- 2112               	.L79:
- 429:ir_heat.c     **** 		   		}
- 430:ir_heat.c     **** 	   		}
- 431:ir_heat.c     **** 	   		else {
- 432:ir_heat.c     **** 	   			if(slope > 160) {
- 2113               	8,.LM186-.LFBB18
- 2114               	.LM186:
- 2115 0b40 8F81      		ldd r18,Y+9
- 2116 0b42 9885      		ldd r19,Y+10
- 2117 0b44 813A      		lds r24,t_la_threshold_down
- 2118 0b46 9105      		lds r25,(t_la_threshold_down)+1
- 2119 0b48 04F0      		std Y+18,__zero_reg__
- 433:ir_heat.c     **** 	   				off_counter = OFF_COUNTER+1;
- 2120               	,r24
- 2121               		cpc r19,r25
- 2122 0b4a 80E1      		brsh .L82
- 2123 0b4c 8093 0000 		ldi r24,lo8(1)
- 434:ir_heat.c     **** 	   				printf("Temperature Protect General Rule, ");
- 2124               	4
- 2125               	.L79:
- 2127 0b52 EDB7      	.LM186:
- 2128 0b54 FEB7      		ldd r18,Y+9
- 2129 0b56 3196      		ldd r19,Y+10
- 2130 0b58 80E0      		lds r24,t_la_threshold_down
- 2131 0b5a 90E0      		lds r25,(t_la_threshold_down)+1
- 2132 0b5c 9183      		std Y+18,__zero_reg__
- 2133 0b5e 8083      		cp r18,r24
- 2134 0b60 0E94 0000 		cpc r19,r25
- 2135 0b64 0F90      		brsh .L82
- 2136 0b66 0F90      		ldi r24,lo8(1)
- 2137               		std Y+18,r24
- 435:ir_heat.c     **** 	   			}
- 436:ir_heat.c     **** 	   		}
- 437:ir_heat.c     **** 
- 438:ir_heat.c     ****    	   }
- 439:ir_heat.c     ****    		if(off_counter) {
- 2138               	,t_abs_threshold_down
- 2139               		lds r19,(t_abs_threshold_down)+1
- 2140 0b68 8091 0000 		std Y+17,__zero_reg__
- 2141 0b6c 8823      		ldd r24,Y+13
- 2142 0b6e 01F0      		ldd r25,Y+14
- 440:ir_heat.c     ****   				off_counter--;
- 2143               	Y+18,__zero_reg__
- 2144               		cp r18,r24
- 2145 0b70 8091 0000 		cpc r19,r25
- 2146 0b74 8150      		brsh .L82
- 2147 0b76 8093 0000 		ldi r24,lo8(1)
- 441:ir_heat.c     ****   				if(mode == MODE_ON) mode = MODE_TEMP_PROT;
- 2148               	4
- 2149               	.L79:
- 2151 0b7e 8130      	.LM186:
- 2152 0b80 01F4      		ldd r18,Y+9
- 2153 0b82 83E0      		ldd r19,Y+10
- 2154 0b84 8093 0000 		lds r24,t_la_threshold_down
- 2155               		lds r25,(t_la_threshold_down)+1
- 442:ir_heat.c     ****   				//RELAIS_OFF;
- 443:ir_heat.c     **** 				//STATUS_LED1_OFF;
- 444:ir_heat.c     **** 				//STATUS_LED2_ON;
- 445:ir_heat.c     **** 				printf("Counter: %i; \n", off_counter);
- 2156               	8,__zero_reg__
- 2157               		cp r18,r24
- 2158 0b88 8091 0000 		cpc r19,r25
- 2159 0b8c 282F      		brsh .L82
- 2160 0b8e 30E0      		ldi r24,lo8(1)
- 2161 0b90 00D0      		std Y+18,r24
- 2162 0b92 00D0      	.L82:
- 2163 0b94 EDB7      		lds r18,t_abs_threshold_down
- 2164 0b96 FEB7      		lds r19,(t_abs_threshold_down)+1
- 2165 0b98 3196      		std Y+17,__zero_reg__
- 2166 0b9a 80E0      		ldd r24,Y+13
- 2167 0b9c 90E0      		ldd r25,Y+14
- 2168 0b9e 9183      		cp r24,r18
- 2169 0ba0 8083      		cpc r25,r19
- 2170 0ba2 3383      		brsh .L83
- 2171 0ba4 2283      		ldi r25,lo8(1)
- 2172 0ba6 0E94 0000 		std Y+17,r25
- 2173 0baa 0F90      	.L83:
- 2174 0bac 0F90      		ldd r24,Y+18
- 2175 0bae 0F90      		ldd r18,Y+17
- 2176 0bb0 0F90      		and r24,r18
- 2177 0bb2 00C0      		tst r24
- 2178               		breq .L84
- 446:ir_heat.c     ****    		}
- 447:ir_heat.c     ****    		else {
- 448:ir_heat.c     **** 	   	   if((lookahead < t_la_threshold_down) & (temp < t_abs_threshold_down)) {
- 2179               	d_down)+1
- 2180               		std Y+17,__zero_reg__
- 2181 0bb4 2985      		ldd r24,Y+13
- 2182 0bb6 3A85      		ldd r25,Y+14
- 2183 0bb8 8091 0000 		cp r24,r18
- 2184 0bbc 9091 0000 		cpc r25,r19
- 2185 0bc0 1A8A      		brsh .L83
- 2186 0bc2 2817      		ldi r25,lo8(1)
- 2187 0bc4 3907      		std Y+17,r25
- 2188 0bc6 00F4      	.L83:
- 2189 0bc8 81E0      		ldd r24,Y+18
- 2190 0bca 8A8B      		ldd r18,Y+17
- 2191               		and r24,r18
- 2192 0bcc 2091 0000 		tst r24
- 2193 0bd0 3091 0000 		breq .L84
- 2195 0bd6 8D85      	.LM187:
- 2196 0bd8 9E85      		lds r24,mode
- 2197 0bda 8217      		cpi r24,lo8(3)
- 2198 0bdc 9307      		brne .L84
- 2199 0bde 00F4      		sts mode,__zero_reg__
- 2200 0be0 91E0      		rjmp .L84
- 2201 0be2 998B      	.L65:
- 2203 0be4 8A89      	.LM188:
- 2204 0be6 2989      		lds r25,interval
- 2205 0be8 8223      		ldd r24,Y+3
- 2206 0bea 8823      		cp r25,r24
- 2207 0bec 01F0      		breq .L84
- 449:ir_heat.c     **** 	   	   	// Relais wieder einschalten, wenn alle Temperaturen unter der unteren Schwelle
- 450:ir_heat.c     **** 	   	   	//if(mode == MODE_TEMP_PROT) mode = MODE_ON;
- 451:ir_heat.c     **** 					//printf("ON\n");
- 452:ir_heat.c     **** 					if(mode == MODE_TEMP_PROT) mode = MODE_OFF;
- 2208               	187:
- 2209               		lds r24,mode
- 2210 0bee 8091 0000 		cpi r24,lo8(3)
- 2211 0bf2 8330      		brne .L84
- 2212 0bf4 01F4      		sts mode,__zero_reg__
- 2213 0bf6 1092 0000 		rjmp .L84
- 2214 0bfa 00C0      	.L65:
- 453:ir_heat.c     **** 	   		}
- 454:ir_heat.c     ****    		}
- 455:ir_heat.c     **** 		}
- 456:ir_heat.c     **** 		else if(interval != last_interval) {
- 2216               	and r24,r18
- 2217               		tst r24
- 2218 0bfc 9091 0000 		breq .L84
- 2220 0c02 9817      	.LM187:
- 2221 0c04 01F0      		lds r24,mode
- 2222               		cpi r24,lo8(3)
- 457:ir_heat.c     ****    		last_interval = interval;
- 2223               	cpc r25,r19
- 2224               		brsh .L83
- 2225 0c06 8091 0000 		ldi r25,lo8(1)
- 2226 0c0a 8B83      		std Y+17,r25
- 458:ir_heat.c     ****    		uint16_t temp;
- 459:ir_heat.c     ****    		if(count<16) {
- 2227               	std Y+18,r24
- 2228               	.L82:
- 2229 0c0c 8C81      		lds r18,t_abs_threshold_down
- 2230 0c0e 8031      		lds r19,(t_abs_threshold_down)+1
- 2231 0c10 00F4      		std Y+17,__zero_reg__
- 460:ir_heat.c     ****    			temp = get_temperature(ADR_T_OBJ1);
- 2232               	,(t_la_threshold_down)+1
- 2233               		std Y+18,__zero_reg__
- 2234 0c12 87E0      		cp r18,r24
- 2235 0c14 0E94 0000 		cpc r19,r25
- 2236 0c18 9A83      		brsh .L82
- 2237 0c1a 8983      		ldi r24,lo8(1)
- 461:ir_heat.c     **** 	   		count++;
- 2238               	4
- 2239               	.L79:
- 2241 0c1e 8F5F      	.LM186:
- 2242 0c20 8C83      		ldd r18,Y+9
- 462:ir_heat.c     ****    			// Messwerte für den Mittelwert aufsummieren
- 463:ir_heat.c     ****    			temp_sum += temp;
- 2243               	r19,Y+10
- 2244               		lds r24,t_la_threshold_down
- 2245 0c22 2B85      		lds r25,(t_la_threshold_down)+1
- 2246 0c24 3C85      		std Y+18,__zero_reg__
- 2247 0c26 8981      		cp r18,r24
- 2248 0c28 9A81      		cpc r19,r25
- 2249 0c2a 820F      		brsh .L82
- 2250 0c2c 931F      		ldi r24,lo8(1)
- 2251 0c2e 9C87      		std Y+18,r24
- 2252 0c30 8B87      	.L82:
- 2253               		lds r18,t_abs_threshold_down
- 2254               		lds r19,(t_abs_threshold_down)+1
- 464:ir_heat.c     ****    			//printf("Raw: %i\n", temp);
- 465:ir_heat.c     ****    		}
- 466:ir_heat.c     ****    	}
- 467:ir_heat.c     **** 
- 468:ir_heat.c     **** 		
- 469:ir_heat.c     **** 		switch(mode) {
- 2255               	zero_reg__
- 2256               		ldd r24,Y+13
- 2257 0c32 8091 0000 		ldd r25,Y+14
- 2258 0c36 282F      		cp r24,r18
- 2259 0c38 30E0      		cpc r25,r19
- 2260 0c3a 388B      		brsh .L83
- 2261 0c3c 2F87      		ldi r25,lo8(1)
- 2262 0c3e 8F85      		std Y+17,r25
- 2263 0c40 9889      	.L83:
- 2264 0c42 8130      		ldd r24,Y+18
- 2265 0c44 9105      		ldd r18,Y+17
- 2266 0c46 01F0      		and r24,r18
- 2267 0c48 2F85      		tst r24
- 2268 0c4a 3889      		breq .L84
- 2270 0c4e 3105      	.LM187:
- 2271 0c50 01F0      		lds r24,mode
- 2272 0c52 8F85      		cpi r24,lo8(3)
- 2273 0c54 9889      		brne .L84
- 2274 0c56 0097      		sts mode,__zero_reg__
- 2275 0c58 01F4      		rjmp .L84
- 2276               	.L65:
- 470:ir_heat.c     **** 		case MODE_OFF:
- 471:ir_heat.c     **** 			set_relais(0);
- 2277               	83:
- 2278               		ldd r24,Y+18
- 2279 0c5a 80E0      		ldd r18,Y+17
- 2280 0c5c 90E0      		and r24,r18
- 2281 0c5e 0E94 0000 		tst r24
- 472:ir_heat.c     **** 			STATUS_LED1_OFF;
- 2282               	abs_threshold_down)+1
- 2283               		std Y+17,__zero_reg__
- 2284 0c62 ABE2      		ldd r24,Y+13
- 2285 0c64 B0E0      		ldd r25,Y+14
- 2286 0c66 EBE2      		cp r24,r18
- 2287 0c68 F0E0      		cpc r25,r19
- 2288 0c6a 8081      		brsh .L83
- 2289 0c6c 8F7E      		ldi r25,lo8(1)
- 2290 0c6e 8C93      		std Y+17,r25
- 473:ir_heat.c     **** 			STATUS_LED2_ON;
- 2291               	std Y+18,r24
- 2292               	.L82:
- 2293 0c70 ABE2      		lds r18,t_abs_threshold_down
- 2294 0c72 B0E0      		lds r19,(t_abs_threshold_down)+1
- 2295 0c74 EBE2      		std Y+17,__zero_reg__
- 2296 0c76 F0E0      		ldd r24,Y+13
- 2297 0c78 8081      		ldd r25,Y+14
- 2298 0c7a 8860      		cp r24,r18
- 2299 0c7c 8C93      		cpc r25,r19
- 2300 0c7e 00C0      		brsh .L83
- 2301               		ldi r25,lo8(1)
- 474:ir_heat.c     **** 			break;
- 475:ir_heat.c     **** 		case MODE_ON:
- 476:ir_heat.c     **** 			set_relais(1);
- 2302               	di r24,lo8(1)
- 2303               		std Y+18,r24
- 2304 0c80 81E0      	.L82:
- 2305 0c82 90E0      		lds r18,t_abs_threshold_down
- 2306 0c84 0E94 0000 		lds r19,(t_abs_threshold_down)+1
- 477:ir_heat.c     **** 			STATUS_LED1_ON;
- 2307               	_threshold_down
- 2308               		lds r25,(t_la_threshold_down)+1
- 2309 0c88 ABE2      		std Y+18,__zero_reg__
- 2310 0c8a B0E0      		cp r18,r24
- 2311 0c8c EBE2      		cpc r19,r25
- 2312 0c8e F0E0      		brsh .L82
- 2313 0c90 8081      		ldi r24,lo8(1)
- 2314 0c92 8061      		std Y+18,r24
- 2315 0c94 8C93      	.L82:
- 478:ir_heat.c     **** 			STATUS_LED2_OFF;
- 2316               	48,.LM186-.LFBB18
- 2317               	.LM186:
- 2318 0c96 ABE2      		ldd r18,Y+9
- 2319 0c98 B0E0      		ldd r19,Y+10
- 2320 0c9a EBE2      		lds r24,t_la_threshold_down
- 2321 0c9c F0E0      		lds r25,(t_la_threshold_down)+1
- 2322 0c9e 8081      		std Y+18,__zero_reg__
- 2323 0ca0 877F      		cp r18,r24
- 2324 0ca2 8C93      		cpc r19,r25
- 2325 0ca4 00C0      		brsh .L82
- 2326               		ldi r24,lo8(1)
- 479:ir_heat.c     **** 			break;
- 480:ir_heat.c     **** 		case MODE_TEMP_PROT:
- 481:ir_heat.c     **** 			set_relais(0);
- 2327               	24
- 2328               	.L82:
- 2329 0ca6 80E0      		lds r18,t_abs_threshold_down
- 2330 0ca8 90E0      		lds r19,(t_abs_threshold_down)+1
- 2331 0caa 0E94 0000 		std Y+17,__zero_reg__
- 482:ir_heat.c     **** 			STATUS_LED1_OFF;
- 2332               	,(t_la_threshold_down)+1
- 2333               		std Y+18,__zero_reg__
- 2334 0cae ABE2      		cp r18,r24
- 2335 0cb0 B0E0      		cpc r19,r25
- 2336 0cb2 EBE2      		brsh .L82
- 2337 0cb4 F0E0      		ldi r24,lo8(1)
- 2338 0cb6 8081      		std Y+18,r24
- 2339 0cb8 8F7E      	.L82:
- 2340 0cba 8C93      		lds r18,t_abs_threshold_down
- 483:ir_heat.c     **** 			STATUS_LED2_ON;
- 2341               	r18,Y+9
- 2342               		ldd r19,Y+10
- 2343 0cbc ABE2      		lds r24,t_la_threshold_down
- 2344 0cbe B0E0      		lds r25,(t_la_threshold_down)+1
- 2345 0cc0 EBE2      		std Y+18,__zero_reg__
- 2346 0cc2 F0E0      		cp r18,r24
- 2347 0cc4 8081      		cpc r19,r25
- 2348 0cc6 8860      		brsh .L82
- 2349 0cc8 8C93      		ldi r24,lo8(1)
- 2350 0cca 00C0      		std Y+18,r24
- 2351               	.L82:
- 484:ir_heat.c     **** 			break;
- 485:ir_heat.c     **** 		default:
- 486:ir_heat.c     **** 			mode = MODE_OFF;
- 2352               	abs_threshold_down
- 2353               		lds r19,(t_abs_threshold_down)+1
- 2354 0ccc 1092 0000 		std Y+17,__zero_reg__
- 2355 0cd0 00C0      		ldd r24,Y+13
- 2356               		ldd r25,Y+14
- 2357               		cp r24,r18
- 2358               		cpc r25,r19
- 2359               		brsh .L83
- 2360               		ldi r25,lo8(1)
- 2361               		std Y+17,r25
- 2362               	.L83:
- 2363               		ldd r24,Y+18
- 2364               		ldd r18,Y+17
- 2365               		and r24,r18
- 2366               		tst r24
- 2367               		breq .L84
- 2369               	.LM187:
- 2370               		lds r24,mode
- 2371               		cpi r24,lo8(3)
- 2372               		brne .L84
- 2373               		sts mode,__zero_reg__
- 2374               		rjmp .L84
- 2375               	.L65:
- 2377               	.LM188:
- 2378               		lds r25,interval
- 2379               		ldd r24,Y+3
- 2380               		cp r25,r24
- 2381               		breq .L84
- 2382               	.LBB2:
- 2384               	.LM189:
- 2385               		lds r24,interval
- 2386               		std Y+3,r24
- 2388               	.LM190:
- 2389               		ldd r24,Y+4
- 2390               		cpi r24,lo8(16)
- 2391               		brsh .L84
- 2393               	.LM191:
- 2394               		ldi r24,lo8(7)
- 2395               		call get_temperature
- 2396               		std Y+2,r25
- 2397               		std Y+1,r24
- 2399               	.LM192:
- 2400               		ldd r24,Y+4
- 2401               		subi r24,lo8(-(1))
+ 345:ir_heat.c     **** 	wdt_reset();
+ 1693               	r31,hi8(110)
+ 1694               		ldi r24,lo8(1)
+ 1695               		st Z,r24
+ 1697 0898 A895      	.LM141:
+ 1698               		ldi r30,lo8(105)
+ 346:ir_heat.c     **** 	wdt_enable(WDTO_8S);
+ 1699               	31,hi8(105)
+ 1700               		ldi r24,lo8(2)
+ 1701               		st Z,r24
+ 1703 089c 90E0      	.LM142:
+ 1704 089e 29E2      		ldi r30,lo8(61)
+ 1705               		ldi r31,hi8(61)
+ 1706               		ldi r24,lo8(1)
+ 1707 08a0 0FB6      		st Z,r24
+ 1709 08a4 A895      	.LM143:
+ 1710 08a6 8093 6000 		ldi r26,lo8(43)
+ 1711 08aa 0FBE      		ldi r27,hi8(43)
+ 1712 08ac 2093 6000 		ldi r30,lo8(43)
+ 1713               		ldi r31,hi8(43)
+ 1714               		ld r24,Z
+ 347:ir_heat.c     **** 	
+ 348:ir_heat.c     **** 	UART_first_init();
+ 1715               	
+ 1716               		st X,r24
+ 1718 08b0 0E94 0000 	.LM144:
+ 349:ir_heat.c     **** 	i2c_init();
+ 1719               	i r26,lo8(43)
+ 1720               		ldi r27,hi8(43)
+ 1721 08b4 0E94 0000 		ldi r30,lo8(43)
+ 350:ir_heat.c     **** 	
+ 351:ir_heat.c     **** 	interval=0;
+ 1722               	i r31,hi8(43)
+ 1723               		ld r24,Z
+ 1724 08b8 1092 0000 		andi r24,lo8(-9)
+ 352:ir_heat.c     **** 	// Timer 2 config (RTC)
+ 353:ir_heat.c     ****    TCCR2B = (1<<CS22) | (1<<CS21) | (1<<CS20);	// clk/256
+ 1725               	 X,r24
+ 1727 08bc E1EB      	.LM145:
+ 1728 08be F0E0      		ldi r24,lo8(.LC7)
+ 1729 08c0 87E0      		ldi r25,hi8(.LC7)
+ 1730 08c2 8083      		call puts
+ 354:ir_heat.c     ****    TIMSK2 = (1<<TOIE2);
+ 1731               	n	68,0,367,.LM146-.LFBB18
+ 1732               	.LM146:
+ 1733 08c4 E0E7      		ldi r24,lo8(0)
+ 1734 08c6 F0E0      		ldi r25,hi8(0)
+ 1735 08c8 81E0      		call set_relais
+ 355:ir_heat.c     **** 
+ 356:ir_heat.c     **** 	TCCR0A = 0;
+ 1737               	:
+ 1738               		sts mode,__zero_reg__
+ 1740 08ce F0E0      	.LM148:
+ 1741 08d0 1082      		std Y+4,__zero_reg__
+ 357:ir_heat.c     **** 	TCCR0B = (0<<CS02) | (1<<CS01) | (1<<CS00);
+ 1742               	bn	68,0,375,.LM149-.LFBB18
+ 1743               	.LM149:
+ 1744 08d2 E5E4      		ldi r24,lo8(-1)
+ 1745 08d4 F0E0      		std Y+3,r24
+ 1747 08d8 8083      	.LM150:
+ 358:ir_heat.c     **** 	TIMSK0 = (1<<TOIE0);
+ 1748               	+12,__zero_reg__
+ 1749               		std Y+11,__zero_reg__
+ 1751 08dc F0E0      	.LM151:
+ 1752 08de 81E0      		ldi r24,lo8(-100)
+ 1753 08e0 8083      		ldi r25,hi8(-100)
+ 359:ir_heat.c     **** 	
+ 360:ir_heat.c     **** 	EICRA = (1<<ISC01);
+ 1754               	+8,r25
+ 1755               		std Y+7,r24
+ 1757 08e4 F0E0      	.LM152:
+ 1758 08e6 82E0      	/* #APP */
+ 1759 08e8 8083      	 ;  380 "ir_heat.c" 1
+ 361:ir_heat.c     **** 	EIMSK = (1<<INT0);
+ 1760               	;  0 "" 2
+ 1761               	/* #NOAPP */
+ 1762 08ea EDE3      	.L93:
+ 1764 08ee 81E0      	.LM153:
+ 1765 08f0 8083      		lds r24,interval
+ 362:ir_heat.c     **** 	
+ 363:ir_heat.c     **** 
+ 364:ir_heat.c     **** 	STATUS_LED1_ON;
+ 1766               	24,lo8(16)
+ 1767               		brge .+2
+ 1768 08f2 ABE2      		rjmp .L67
+ 1770 08f6 EBE2      	.LM154:
+ 1771 08f8 F0E0      	/* #APP */
+ 1772 08fa 8081      	 ;  384 "ir_heat.c" 1
+ 1773 08fc 8061      		wdr
+ 1774 08fe 8C93      	 ;  0 "" 2
+ 365:ir_heat.c     **** 	STATUS_LED2_OFF;
+ 1775               	8,0,385,.LM155-.LFBB18
+ 1776               	.LM155:
+ 1777 0900 ABE2      	/* #NOAPP */
+ 1778 0902 B0E0      		sts interval,__zero_reg__
+ 1780 0906 F0E0      	.LM156:
+ 1781 0908 8081      		std Y+4,__zero_reg__
+ 1783 090c 8C93      	.LM157:
+ 366:ir_heat.c     **** 	printf("\nStart\n");
+ 1784               	Y+11
+ 1785               		ldd r25,Y+12
+ 1786 090e 80E0      		swap r25
+ 1787 0910 90E0      		swap r24
+ 1788 0912 0E94 0000 		andi r24,0x0f
+ 367:ir_heat.c     **** 	set_relais(0);
+ 1789               	r24,r25
+ 1790               		andi r25,0x0f
+ 1791 0916 80E0      		eor r24,r25
+ 1792 0918 90E0      		std Y+14,r25
+ 1793 091a 0E94 0000 		std Y+13,r24
+ 368:ir_heat.c     **** 	mode = MODE_OFF;
+ 1794               	bn	68,0,391,.LM158-.LFBB18
+ 1795               	.LM158:
+ 1796 091e 1092 0000 		std Y+12,__zero_reg__
+ 369:ir_heat.c     **** 	
+ 370:ir_heat.c     **** 	uint16_t temp, temp_sum;
+ 371:ir_heat.c     **** 	int16_t	lookahead;
+ 372:ir_heat.c     **** 	int16_t 	slope;
+ 373:ir_heat.c     **** 	int16_t	slope_raw;
+ 374:ir_heat.c     **** 	uint8_t	count=0;
+ 1797               	d Y+11,__zero_reg__
+ 1799 0922 1C82      	.LM159:
+ 375:ir_heat.c     **** 	uint8_t  last_interval = 0xff;
+ 1800               	d r24,Y+13
+ 1801               		ldd r25,Y+14
+ 1802 0924 8FEF      		sbiw r24,0
+ 1803 0926 8B83      		brne .L68
+ 376:ir_heat.c     **** 	
+ 377:ir_heat.c     **** 	temp_sum = 0;
+ 1804               	abn	68,0,395,.LM160-.LFBB18
+ 1805               	.LM160:
+ 1806 0928 1C86      		rcall .
+ 1807 092a 1B86      		in r30,__SP_L__
+ 378:ir_heat.c     **** 	slope = -100;
+ 1808               	r31,__SP_H__
+ 1809               		adiw r30,1
+ 1810 092c 8CE9      		ldi r24,lo8(.LC8)
+ 1811 092e 9FEF      		ldi r25,hi8(.LC8)
+ 1812 0930 9887      		std Z+1,r25
+ 1813 0932 8F83      		st Z,r24
+ 379:ir_heat.c     **** 	
+ 380:ir_heat.c     **** 	sei();
+ 1814               	printf
+ 1815               		pop __tmp_reg__
+ 1816               		pop __tmp_reg__
+ 1817               		rjmp .L69
+ 1818 0934 7894      	.L68:
+ 1820               	.LM161:
+ 1821               		ldd r24,Y+7
+ 381:ir_heat.c     **** 
+ 382:ir_heat.c     ****    while(1) {             // Infinite loop; define here the
+ 383:ir_heat.c     ****    	if(!(interval < 16)) {
+ 1822               	,Y+8
+ 1823               		tst r25
+ 1824 0936 8091 0000 		brge .L70
+ 1826 093c 04F4      	.LM162:
+ 1827 093e 00C0      		std Y+8,__zero_reg__
+ 384:ir_heat.c     ****    		wdt_reset();
+ 1828               	+7,__zero_reg__
+ 1830               	.LM163:
+ 1831               		ldi r24,lo8(7)
+ 1832 0940 A895      		call get_temperature
+ 1833               		std Y+14,r25
+ 385:ir_heat.c     ****    		interval=0;
+ 1834               	+13,r24
+ 1835               	.L70:
+ 1837 0942 1092 0000 	.LM164:
+ 386:ir_heat.c     ****    		count=0;
+ 1838               	ll .
+ 1839               		rcall .
+ 1840 0946 1C82      		in r30,__SP_L__
+ 387:ir_heat.c     ****    		//printf("Messen\n");
+ 388:ir_heat.c     ****    		// Temperatur einlesen
+ 389:ir_heat.c     **** //	      temp = get_temperature(ADR_T_OBJ1);
+ 390:ir_heat.c     **** 			temp = temp_sum >> 4;
+ 1841               	 r31,__SP_H__
+ 1842               		adiw r30,1
+ 1843 0948 8B85      		ldi r24,lo8(.LC9)
+ 1844 094a 9C85      		ldi r25,hi8(.LC9)
+ 1845 094c 9295      		std Z+1,r25
+ 1846 094e 8295      		st Z,r24
+ 1847 0950 8F70      		ldd r24,Y+13
+ 1848 0952 8927      		ldd r25,Y+14
+ 1849 0954 9F70      		std Z+3,r25
+ 1850 0956 8927      		std Z+2,r24
+ 1851 0958 9E87      		call printf
+ 1852 095a 8D87      		pop __tmp_reg__
+ 391:ir_heat.c     **** 			temp_sum = 0;
+ 1853               	eg__
+ 1854               		pop __tmp_reg__
+ 1855 095c 1C86      		pop __tmp_reg__
+ 392:ir_heat.c     **** 	      //printf("Temp: %i\n", temp);
+ 393:ir_heat.c     **** 	      if(temp==0) {
+ 1857               	65:
+ 1858               		ldd r24,Y+13
+ 1859 0960 8D85      		ldd r25,Y+14
+ 1860 0962 9E85      		call add_value
+ 1862 0966 01F4      	.LM166:
+ 394:ir_heat.c     **** 	      // error!
+ 395:ir_heat.c     **** 	      	printf("Error Temp=0");
+ 1863               	get_slope
+ 1864               		std Y+6,r25
+ 1865 0968 00D0      		std Y+5,r24
+ 1867 096c FEB7      	.LM167:
+ 1868 096e 3196      		ldd r18,Y+7
+ 1869 0970 80E0      		ldd r19,Y+8
+ 1870 0972 90E0      		movw r24,r18
+ 1871 0974 9183      		lsl r24
+ 1872 0976 8083      		rol r25
+ 1873 0978 0E94 0000 		add r24,r18
+ 1874 097c 0F90      		adc r25,r19
+ 1875 097e 0F90      		movw r18,r24
+ 1876 0980 00C0      		lsl r18
+ 1877               		rol r19
+ 396:ir_heat.c     **** 	      }
+ 397:ir_heat.c     **** 	      else {
+ 398:ir_heat.c     **** 				if (slope < 0) {
+ 1878               	19
+ 1879               		movw r20,r24
+ 1880 0982 8F81      		add r20,r18
+ 1881 0984 9885      		adc r21,r19
+ 1882 0986 9923      		ldd r24,Y+5
+ 1883 0988 04F4      		ldd r25,Y+6
+ 399:ir_heat.c     **** 					slope = 0;
+ 1884               	r18,r24
+ 1885               		lsl r18
+ 1886 098a 1886      		rol r19
+ 1887 098c 1F82      		movw r24,r18
+ 400:ir_heat.c     **** 					temp = get_temperature(ADR_T_OBJ1);
+ 1888               	 r24
+ 1889               		rol r25
+ 1890 098e 87E0      		lsl r24
+ 1891 0990 0E94 0000 		rol r25
+ 1892 0994 9E87      		add r24,r18
+ 1893 0996 8D87      		adc r25,r19
+ 1894               		add r24,r20
+ 401:ir_heat.c     **** 				}
+ 402:ir_heat.c     ****    	   	printf("Temp: %i, ", temp);
+ 1895               	5,r21
+ 1896               		std Y+21,r25
+ 1897 0998 00D0      		std Y+20,r24
+ 1898 099a 00D0      		ldd r24,Y+20
+ 1899 099c EDB7      		ldd r25,Y+21
+ 1900 099e FEB7      		tst r25
+ 1901 09a0 3196      		brge .L71
+ 1902 09a2 80E0      		ldd r18,Y+20
+ 1903 09a4 90E0      		ldd r19,Y+21
+ 1904 09a6 9183      		subi r18,lo8(-(15))
+ 1905 09a8 8083      		sbci r19,hi8(-(15))
+ 1906 09aa 8D85      		std Y+21,r19
+ 1907 09ac 9E85      		std Y+20,r18
+ 1908 09ae 9383      	.L71:
+ 1909 09b0 8283      		ldd r24,Y+20
+ 1910 09b2 0E94 0000 		ldd r25,Y+21
+ 1911 09b6 0F90      		asr r25
+ 1912 09b8 0F90      		ror r24
+ 1913 09ba 0F90      		asr r25
+ 1914 09bc 0F90      		ror r24
+ 403:ir_heat.c     ****    	   	// Temperaturverlauf auswerten
+ 404:ir_heat.c     ****    	   	add_value(temp);
+ 1915               	sr r25
+ 1916               		ror r24
+ 1917 09be 8D85      		std Y+8,r25
+ 1918 09c0 9E85      		std Y+7,r24
+ 405:ir_heat.c     ****    	   	//print_array();
+ 406:ir_heat.c     ****    	   	slope_raw = get_slope();
+ 1920               	8:
+ 1921               		lds r18,slope2
+ 1922 09c6 0E94 0000 		lds r19,(slope2)+1
+ 1923 09ca 9E83      		in r24,__SP_L__
+ 1924 09cc 8D83      		in r25,__SP_H__
+ 407:ir_heat.c     **** 				//if(slope_raw<0) slope_raw = 0;
+ 408:ir_heat.c     ****    	   	slope = (15*slope + 10*slope_raw)/16;
+ 1925               	 r24,8
+ 1926               		in __tmp_reg__,__SREG__
+ 1927 09ce 2F81      		cli
+ 1928 09d0 3885      		out __SP_H__,r25
+ 1929 09d2 C901      		out __SREG__,__tmp_reg__
+ 1930 09d4 880F      		out __SP_L__,r24
+ 1931 09d6 991F      		in r30,__SP_L__
+ 1932 09d8 820F      		in r31,__SP_H__
+ 1933 09da 931F      		adiw r30,1
+ 1934 09dc 9C01      		ldi r24,lo8(.LC10)
+ 1935 09de 220F      		ldi r25,hi8(.LC10)
+ 1936 09e0 331F      		std Z+1,r25
+ 1937 09e2 220F      		st Z,r24
+ 1938 09e4 331F      		ldd r24,Y+5
+ 1939 09e6 AC01      		ldd r25,Y+6
+ 1940 09e8 420F      		std Z+3,r25
+ 1941 09ea 531F      		std Z+2,r24
+ 1942 09ec 8D81      		ldd r24,Y+7
+ 1943 09ee 9E81      		ldd r25,Y+8
+ 1944 09f0 9C01      		std Z+5,r25
+ 1945 09f2 220F      		std Z+4,r24
+ 1946 09f4 331F      		std Z+7,r19
+ 1947 09f6 C901      		std Z+6,r18
+ 1948 09f8 880F      		call printf
+ 1949 09fa 991F      		in r18,__SP_L__
+ 1950 09fc 880F      		in r19,__SP_H__
+ 1951 09fe 991F      		subi r18,lo8(-(8))
+ 1952 0a00 820F      		sbci r19,hi8(-(8))
+ 1953 0a02 931F      		in __tmp_reg__,__SREG__
+ 1954 0a04 840F      		cli
+ 1955 0a06 951F      		out __SP_H__,r19
+ 1956 0a08 9D8B      		out __SREG__,__tmp_reg__
+ 1957 0a0a 8C8B      		out __SP_L__,r18
+ 1959 0a0e 9D89      	.LM169:
+ 1960 0a10 9923      		ldd r24,Y+7
+ 1961 0a12 04F4      		ldi r22,lo8(5)
+ 1962 0a14 2C89      		call lookahead_temp
+ 1963 0a16 3D89      		std Y+10,r25
+ 1964 0a18 215F      		std Y+9,r24
+ 1966 0a1c 3D8B      	.LM170:
+ 1967 0a1e 2C8B      		ldi r24,lo8(6)
+ 1968               		call get_temperature
+ 1969 0a20 8C89      		movw r18,r24
+ 1970 0a22 9D89      		rcall .
+ 1971 0a24 9595      		rcall .
+ 1972 0a26 8795      		in r30,__SP_L__
+ 1973 0a28 9595      		in r31,__SP_H__
+ 1974 0a2a 8795      		adiw r30,1
+ 1975 0a2c 9595      		ldi r24,lo8(.LC11)
+ 1976 0a2e 8795      		ldi r25,hi8(.LC11)
+ 1977 0a30 9595      		std Z+1,r25
+ 1978 0a32 8795      		st Z,r24
+ 1979 0a34 9887      		std Z+3,r19
+ 1980 0a36 8F83      		std Z+2,r18
+ 409:ir_heat.c     ****    	   	printf("slope_raw: %i, slope: %i, slope2: %i, ", slope_raw, slope, slope2);
+ 1981               	p_reg__
+ 1982               		pop __tmp_reg__
+ 1984 0a3c 3091 0000 	.LM171:
+ 1985 0a40 8DB7      		ldd r24,Y+13
+ 1986 0a42 9EB7      		ldd r25,Y+14
+ 1987 0a44 0897      		ldi r19,hi8(481)
+ 1988 0a46 0FB6      		cpi r24,lo8(481)
+ 1989 0a48 F894      		cpc r25,r19
+ 1990 0a4a 9EBF      		brlo .L72
+ 1992 0a4e 8DBF      	.LM172:
+ 1993 0a50 EDB7      		ldd r24,Y+7
+ 1994 0a52 FEB7      		ldd r25,Y+8
+ 1995 0a54 3196      		cpi r24,31
+ 1996 0a56 80E0      		cpc r25,__zero_reg__
+ 1997 0a58 90E0      		brge .+2
+ 1998 0a5a 9183      		rjmp .L69
+ 2000 0a5e 8D81      	.LM173:
+ 2001 0a60 9E81      		ldi r24,lo8(11)
+ 2002 0a62 9383      		sts off_counter,r24
+ 2004 0a66 8F81      	.LM174:
+ 2005 0a68 9885      		rcall .
+ 2006 0a6a 9583      		in r30,__SP_L__
+ 2007 0a6c 8483      		in r31,__SP_H__
+ 2008 0a6e 3783      		adiw r30,1
+ 2009 0a70 2683      		ldi r24,lo8(.LC12)
+ 2010 0a72 0E94 0000 		ldi r25,hi8(.LC12)
+ 2011 0a76 2DB7      		std Z+1,r25
+ 2012 0a78 3EB7      		st Z,r24
+ 2013 0a7a 285F      		call printf
+ 2014 0a7c 3F4F      		pop __tmp_reg__
+ 2015 0a7e 0FB6      		pop __tmp_reg__
+ 2016 0a80 F894      		rjmp .L69
+ 2017 0a82 3EBF      	.L72:
+ 2019 0a86 2DBF      	.LM175:
+ 410:ir_heat.c     **** 				lookahead=lookahead_temp(slope, 5);   	   	
+ 2020               	8(451)
+ 2021               		cpi r24,lo8(451)
+ 2022 0a88 8F81      		cpc r25,r18
+ 2023 0a8a 65E0      		brlo .L74
+ 2025 0a90 9A87      	.LM176:
+ 2026 0a92 8987      		ldd r24,Y+7
+ 411:ir_heat.c     ****    	   	//printf("Prognose: %i\n", lookahead);
+ 412:ir_heat.c     ****    	   	printf("Ambient: %i\n", get_temperature(ADR_T_A));
+ 2027               	5,Y+8
+ 2028               		cpi r24,51
+ 2029 0a94 86E0      		cpc r25,__zero_reg__
+ 2030 0a96 0E94 0000 		brge .+2
+ 2031 0a9a 9C01      		rjmp .L69
+ 2033 0a9e 00D0      	.LM177:
+ 2034 0aa0 EDB7      		ldi r24,lo8(11)
+ 2035 0aa2 FEB7      		sts off_counter,r24
+ 2037 0aa6 80E0      	.LM178:
+ 2038 0aa8 90E0      		rcall .
+ 2039 0aaa 9183      		in r30,__SP_L__
+ 2040 0aac 8083      		in r31,__SP_H__
+ 2041 0aae 3383      		adiw r30,1
+ 2042 0ab0 2283      		ldi r24,lo8(.LC13)
+ 2043 0ab2 0E94 0000 		ldi r25,hi8(.LC13)
+ 2044 0ab6 0F90      		std Z+1,r25
+ 2045 0ab8 0F90      		st Z,r24
+ 2046 0aba 0F90      		call printf
+ 2047 0abc 0F90      		pop __tmp_reg__
+ 413:ir_heat.c     **** 				
+ 414:ir_heat.c     ****    	   	// Relais sperren, wenn ein Wert über dem Grenzwert
+ 415:ir_heat.c     **** 	   	   //if((lookahead > t_la_threshold_up) | (temp > t_abs_threshold_up)) off_counter = OFF_COUNT
+ 416:ir_heat.c     **** 	   	
+ 417:ir_heat.c     **** 	   		if(temp > 480) {
+ 2048               	p .L69
+ 2049               	.L74:
+ 2051 0ac0 9E85      	.LM179:
+ 2052 0ac2 31E0      		ldd r24,Y+13
+ 2053 0ac4 813E      		ldd r25,Y+14
+ 2054 0ac6 9307      		ldi r19,hi8(401)
+ 2055 0ac8 00F0      		cpi r24,lo8(401)
+ 418:ir_heat.c     **** 	   			if(slope > 30) {
+ 2056               	,r19
+ 2057               		brlo .L76
+ 2059 0acc 9885      	.LM180:
+ 2060 0ace 8F31      		ldd r24,Y+7
+ 2061 0ad0 9105      		ldd r25,Y+8
+ 2062 0ad2 04F4      		cpi r24,61
+ 2063 0ad4 00C0      		cpc r25,__zero_reg__
+ 419:ir_heat.c     **** 	   				off_counter = OFF_COUNTER+1;
+ 2064               	2
+ 2065               		rjmp .L69
+ 2067 0ad8 8093 0000 	.LM181:
+ 420:ir_heat.c     **** 	   				printf("Temperature Protect Rule 48, ");
+ 2068               	 r24,lo8(11)
+ 2069               		sts off_counter,r24
+ 2071 0ade EDB7      	.LM182:
+ 2072 0ae0 FEB7      		rcall .
+ 2073 0ae2 3196      		rcall .
+ 2074 0ae4 80E0      		in r30,__SP_L__
+ 2075 0ae6 90E0      		in r31,__SP_H__
+ 2076 0ae8 9183      		adiw r30,1
+ 2077 0aea 8083      		ldi r24,lo8(.LC14)
+ 2078 0aec 0E94 0000 		ldi r25,hi8(.LC14)
+ 2079 0af0 0F90      		std Z+1,r25
+ 2080 0af2 0F90      		st Z,r24
+ 2081 0af4 00C0      		ldd r24,Y+7
+ 2082               		ldd r25,Y+8
+ 421:ir_heat.c     **** 	   			}
+ 422:ir_heat.c     **** 	   		}
+ 423:ir_heat.c     **** 	   		else if(temp > 450) {
+ 2083               	td Z+2,r24
+ 2084               		call printf
+ 2085 0af6 8D85      		pop __tmp_reg__
+ 2086 0af8 9E85      		pop __tmp_reg__
+ 2087 0afa 21E0      		pop __tmp_reg__
+ 2088 0afc 833C      		pop __tmp_reg__
+ 2089 0afe 9207      		rjmp .L69
+ 2090 0b00 00F0      	.L76:
+ 424:ir_heat.c     **** 	   			if(slope > 50) {
+ 2091               	68,0,435,.LM183-.LFBB18
+ 2092               	.LM183:
+ 2093 0b02 8F81      		ldd r24,Y+13
+ 2094 0b04 9885      		ldd r25,Y+14
+ 2095 0b06 8333      		ldi r18,hi8(351)
+ 2096 0b08 9105      		cpi r24,lo8(351)
+ 2097 0b0a 04F4      		cpc r25,r18
+ 2098 0b0c 00C0      		brlo .L78
+ 425:ir_heat.c     **** 	   				off_counter = OFF_COUNTER+1;
+ 2099               	68,0,436,.LM184-.LFBB18
+ 2100               	.LM184:
+ 2101 0b0e 8BE0      		ldd r24,Y+7
+ 2102 0b10 8093 0000 		ldd r25,Y+8
+ 426:ir_heat.c     **** 	   				printf("Temperature Protect Rule 45, ");
+ 2103               	 r24,81
+ 2104               		cpc r25,__zero_reg__
+ 2105 0b14 00D0      		brge .+2
+ 2106 0b16 EDB7      		rjmp .L69
+ 2108 0b1a 3196      	.LM185:
+ 2109 0b1c 80E0      		ldi r24,lo8(11)
+ 2110 0b1e 90E0      		sts off_counter,r24
+ 2112 0b22 8083      	.LM186:
+ 2113 0b24 0E94 0000 		rcall .
+ 2114 0b28 0F90      		in r30,__SP_L__
+ 2115 0b2a 0F90      		in r31,__SP_H__
+ 2116 0b2c 00C0      		adiw r30,1
+ 2117               		ldi r24,lo8(.LC15)
+ 427:ir_heat.c     **** 	   			}
+ 428:ir_heat.c     **** 	   		}
+ 429:ir_heat.c     **** 	   		else if(temp > 400) {
+ 2118               	C15)
+ 2119               		std Z+1,r25
+ 2120 0b2e 8D85      		st Z,r24
+ 2121 0b30 9E85      		call printf
+ 2122 0b32 31E0      		pop __tmp_reg__
+ 2123 0b34 8139      		pop __tmp_reg__
+ 2124 0b36 9307      		rjmp .L69
+ 2125 0b38 00F0      	.L78:
+ 430:ir_heat.c     **** 	   			if(slope > 60) {
+ 2126               	68,0,441,.LM187-.LFBB18
+ 2127               	.LM187:
+ 2128 0b3a 8F81      		ldd r24,Y+13
+ 2129 0b3c 9885      		ldd r25,Y+14
+ 2130 0b3e 8D33      		ldi r19,hi8(301)
+ 2131 0b40 9105      		cpi r24,lo8(301)
+ 2132 0b42 04F4      		cpc r25,r19
+ 2133 0b44 00C0      		brlo .L80
+ 431:ir_heat.c     **** 	   				off_counter = OFF_COUNTER+1;
+ 2134               	68,0,442,.LM188-.LFBB18
+ 2135               	.LM188:
+ 2136 0b46 8BE0      		ldd r24,Y+7
+ 2137 0b48 8093 0000 		ldd r25,Y+8
+ 432:ir_heat.c     **** 	   				printf("Temperature Protect Rule 40, ", slope);
+ 2138               	 r24,121
+ 2139               		cpc r25,__zero_reg__
+ 2140 0b4c 00D0      		brlt .L69
+ 2142 0b50 EDB7      	.LM189:
+ 2143 0b52 FEB7      		ldi r24,lo8(11)
+ 2144 0b54 3196      		sts off_counter,r24
+ 2146 0b58 90E0      	.LM190:
+ 2147 0b5a 9183      		rcall .
+ 2148 0b5c 8083      		in r30,__SP_L__
+ 2149 0b5e 8F81      		in r31,__SP_H__
+ 2150 0b60 9885      		adiw r30,1
+ 2151 0b62 9383      		ldi r24,lo8(.LC16)
+ 2152 0b64 8283      		ldi r25,hi8(.LC16)
+ 2153 0b66 0E94 0000 		std Z+1,r25
+ 2154 0b6a 0F90      		st Z,r24
+ 2155 0b6c 0F90      		call printf
+ 2156 0b6e 0F90      		pop __tmp_reg__
+ 2157 0b70 0F90      		pop __tmp_reg__
+ 2158 0b72 00C0      		rjmp .L69
+ 2159               	.L80:
+ 433:ir_heat.c     **** 	   			}
+ 434:ir_heat.c     **** 	   		}
+ 435:ir_heat.c     **** 	   		else if(temp > 350) {
+ 2160               	1-.LFBB18
+ 2161               	.LM191:
+ 2162 0b74 8D85      		ldd r24,Y+7
+ 2163 0b76 9E85      		ldd r25,Y+8
+ 2164 0b78 21E0      		cpi r24,161
+ 2165 0b7a 8F35      		cpc r25,__zero_reg__
+ 2166 0b7c 9207      		brlt .L69
+ 436:ir_heat.c     **** 	   			if(slope > 80) {
+ 2168               		ldi r24,lo8(11)
+ 2169               		sts off_counter,r24
+ 2171 0b82 9885      	.LM193:
+ 2172 0b84 8135      		rcall .
+ 2173 0b86 9105      		in r30,__SP_L__
+ 2174 0b88 04F4      		in r31,__SP_H__
+ 2175 0b8a 00C0      		adiw r30,1
+ 437:ir_heat.c     **** 	   				off_counter = OFF_COUNTER+1;
+ 2176               	,lo8(.LC17)
+ 2177               		ldi r25,hi8(.LC17)
+ 2178 0b8c 8BE0      		std Z+1,r25
+ 2179 0b8e 8093 0000 		st Z,r24
+ 438:ir_heat.c     **** 	   				printf("Temperature Protect Rule 35, ");
+ 2180               	l printf
+ 2181               		pop __tmp_reg__
+ 2182 0b92 00D0      		pop __tmp_reg__
+ 2183 0b94 EDB7      	.L69:
+ 2185 0b98 3196      	.LM194:
+ 2186 0b9a 80E0      		lds r24,off_counter
+ 2187 0b9c 90E0      		tst r24
+ 2188 0b9e 9183      		breq .L82
+ 2190 0ba2 0E94 0000 	.LM195:
+ 2191 0ba6 0F90      		lds r24,off_counter
+ 2192 0ba8 0F90      		subi r24,lo8(-(-1))
+ 2193 0baa 00C0      		sts off_counter,r24
+ 439:ir_heat.c     ****                }
+ 440:ir_heat.c     **** 	   		}
+ 441:ir_heat.c     **** 	   		else if(temp > 300) {
+ 2195               	4,mode
+ 2196               		cpi r24,lo8(1)
+ 2197 0bac 8D85      		brne .L83
+ 2198 0bae 9E85      		ldi r24,lo8(3)
+ 2199 0bb0 31E0      		sts mode,r24
+ 2200 0bb2 8D32      	.L83:
+ 2202 0bb6 00F0      	.LM197:
+ 442:ir_heat.c     **** 	   			if(slope > 120) {
+ 2203               	,off_counter
+ 2204               		mov r18,r24
+ 2205 0bb8 8F81      		ldi r19,lo8(0)
+ 2206 0bba 9885      		rcall .
+ 2207 0bbc 8937      		rcall .
+ 2208 0bbe 9105      		in r30,__SP_L__
+ 2209 0bc0 04F0      		in r31,__SP_H__
+ 443:ir_heat.c     **** 	   				off_counter = OFF_COUNTER+1;
+ 2210               	30,1
+ 2211               		ldi r24,lo8(.LC18)
+ 2212 0bc2 8BE0      		ldi r25,hi8(.LC18)
+ 2213 0bc4 8093 0000 		std Z+1,r25
+ 444:ir_heat.c     **** 		   			printf("Temperature Protect Rule 30, ");
+ 2214               	Z,r24
+ 2215               		std Z+3,r19
+ 2216 0bc8 00D0      		std Z+2,r18
+ 2217 0bca EDB7      		call printf
+ 2218 0bcc FEB7      		pop __tmp_reg__
+ 2219 0bce 3196      		pop __tmp_reg__
+ 2220 0bd0 80E0      		pop __tmp_reg__
+ 2221 0bd2 90E0      		pop __tmp_reg__
+ 2222 0bd4 9183      		rjmp .L87
+ 2223 0bd6 8083      	.L82:
+ 2225 0bdc 0F90      	.LM198:
+ 2226 0bde 0F90      		ldd r18,Y+9
+ 2227 0be0 00C0      		ldd r19,Y+10
+ 2228               		lds r24,t_la_threshold_down
+ 445:ir_heat.c     **** 		   		}
+ 446:ir_heat.c     **** 	   		}
+ 447:ir_heat.c     **** 	   		else {
+ 448:ir_heat.c     **** 	   			if(slope > 160) {
+ 2229               	threshold_down)+1
+ 2230               		std Y+18,__zero_reg__
+ 2231 0be2 8F81      		cp r18,r24
+ 2232 0be4 9885      		cpc r19,r25
+ 2233 0be6 813A      		brsh .L85
+ 2234 0be8 9105      		ldi r24,lo8(1)
+ 2235 0bea 04F0      		std Y+18,r24
+ 449:ir_heat.c     **** 	   				off_counter = OFF_COUNTER+1;
+ 2236               	lds r18,t_abs_threshold_down
+ 2237               		lds r19,(t_abs_threshold_down)+1
+ 2238 0bec 8BE0      		std Y+17,__zero_reg__
+ 2239 0bee 8093 0000 		ldd r24,Y+13
+ 450:ir_heat.c     **** 	   				printf("Temperature Protect General Rule, ");
+ 2240               	hreshold_down)+1
+ 2241               		std Y+18,__zero_reg__
+ 2242 0bf2 00D0      		cp r18,r24
+ 2243 0bf4 EDB7      		cpc r19,r25
+ 2244 0bf6 FEB7      		brsh .L85
+ 2245 0bf8 3196      		ldi r24,lo8(1)
+ 2246 0bfa 80E0      		std Y+18,r24
+ 2247 0bfc 90E0      	.L85:
+ 2248 0bfe 9183      		lds r18,t_abs_threshold_down
+ 2249 0c00 8083      		lds r19,(t_abs_threshold_down)+1
+ 2250 0c02 0E94 0000 		std Y+17,__zero_reg__
+ 2251 0c06 0F90      		ldd r24,Y+13
+ 2252 0c08 0F90      		ldd r25,Y+14
+ 2253               		cp r24,r18
+ 451:ir_heat.c     **** 	   			}
+ 452:ir_heat.c     **** 	   		}
+ 453:ir_heat.c     **** 
+ 454:ir_heat.c     ****    	   }
+ 455:ir_heat.c     ****    		if(off_counter) {
+ 2254               	brsh .L86
+ 2255               		ldi r25,lo8(1)
+ 2256 0c0a 8091 0000 		std Y+17,r25
+ 2257 0c0e 8823      	.L86:
+ 2258 0c10 01F0      		ldd r24,Y+18
+ 456:ir_heat.c     ****   				off_counter--;
+ 2259               	85:
+ 2260               		lds r18,t_abs_threshold_down
+ 2261 0c12 8091 0000 		lds r19,(t_abs_threshold_down)+1
+ 2262 0c16 8150      		std Y+17,__zero_reg__
+ 2263 0c18 8093 0000 		ldd r24,Y+13
+ 457:ir_heat.c     ****   				if(mode == MODE_ON) mode = MODE_TEMP_PROT;
+ 2264               	hreshold_down)+1
+ 2265               		std Y+18,__zero_reg__
+ 2266 0c1c 8091 0000 		cp r18,r24
+ 2267 0c20 8130      		cpc r19,r25
+ 2268 0c22 01F4      		brsh .L85
+ 2269 0c24 83E0      		ldi r24,lo8(1)
+ 2270 0c26 8093 0000 		std Y+18,r24
+ 2271               	.L85:
+ 458:ir_heat.c     ****   				//RELAIS_OFF;
+ 459:ir_heat.c     **** 				//STATUS_LED1_OFF;
+ 460:ir_heat.c     **** 				//STATUS_LED2_ON;
+ 461:ir_heat.c     **** 				printf("Counter: %i; \n", off_counter);
+ 2272               	,t_abs_threshold_down
+ 2273               		lds r19,(t_abs_threshold_down)+1
+ 2274 0c2a 8091 0000 		std Y+17,__zero_reg__
+ 2275 0c2e 282F      		ldd r24,Y+13
+ 2276 0c30 30E0      		ldd r25,Y+14
+ 2277 0c32 00D0      		cp r24,r18
+ 2278 0c34 00D0      		cpc r25,r19
+ 2279 0c36 EDB7      		brsh .L86
+ 2280 0c38 FEB7      		ldi r25,lo8(1)
+ 2281 0c3a 3196      		std Y+17,r25
+ 2282 0c3c 80E0      	.L86:
+ 2283 0c3e 90E0      		ldd r24,Y+18
+ 2284 0c40 9183      		ldd r18,Y+17
+ 2285 0c42 8083      		and r24,r18
+ 2286 0c44 3383      		tst r24
+ 2287 0c46 2283      		breq .L87
+ 2289 0c4c 0F90      	.LM199:
+ 2290 0c4e 0F90      		lds r24,mode
+ 2291 0c50 0F90      		cpi r24,lo8(3)
+ 2292 0c52 0F90      		brne .L87
+ 2293 0c54 00C0      		sts mode,__zero_reg__
+ 2294               		rjmp .L87
+ 462:ir_heat.c     ****    		}
+ 463:ir_heat.c     ****    		else {
+ 464:ir_heat.c     **** 	   	   if((lookahead < t_la_threshold_down) & (temp < t_abs_threshold_down)) {
+ 2295               	td Y+17,r25
+ 2296               	.L86:
+ 2297 0c56 2985      		ldd r24,Y+18
+ 2298 0c58 3A85      		ldd r18,Y+17
+ 2299 0c5a 8091 0000 		and r24,r18
+ 2300 0c5e 9091 0000 		tst r24
+ 2301 0c62 1A8A      		breq .L87
+ 2303 0c66 3907      	.LM199:
+ 2304 0c68 00F4      		lds r24,mode
+ 2305 0c6a 81E0      		cpi r24,lo8(3)
+ 2306 0c6c 8A8B      		brne .L87
+ 2307               		sts mode,__zero_reg__
+ 2308 0c6e 2091 0000 		rjmp .L87
+ 2309 0c72 3091 0000 	.L67:
+ 2311 0c78 8D85      	.LM200:
+ 2312 0c7a 9E85      		lds r24,interval
+ 2313 0c7c 8217      		mov r18,r24
+ 2314 0c7e 9307      		clr r19
+ 2315 0c80 00F4      		sbrc r18,7
+ 2316 0c82 91E0      		com r19
+ 2317 0c84 998B      		ldd r24,Y+3
+ 2318               		mov r24,r24
+ 2319 0c86 8A89      		ldi r25,lo8(0)
+ 2320 0c88 2989      		cp r18,r24
+ 2321 0c8a 8223      		cpc r19,r25
+ 2322 0c8c 8823      		breq .L87
+ 2323 0c8e 01F0      	.LBB2:
+ 465:ir_heat.c     **** 	   	   	// Relais wieder einschalten, wenn alle Temperaturen unter der unteren Schwelle
+ 466:ir_heat.c     **** 	   	   	//if(mode == MODE_TEMP_PROT) mode = MODE_ON;
+ 467:ir_heat.c     **** 					//printf("ON\n");
+ 468:ir_heat.c     **** 					if(mode == MODE_TEMP_PROT) mode = MODE_OFF;
+ 2324               		68,0,472,.LM200-.LFBB18
+ 2325               	.LM200:
+ 2326 0c90 8091 0000 		lds r24,interval
+ 2327 0c94 8330      		mov r18,r24
+ 2328 0c96 01F4      		clr r19
+ 2329 0c98 1092 0000 		sbrc r18,7
+ 2330 0c9c 00C0      		com r19
+ 2331               		ldd r24,Y+3
+ 469:ir_heat.c     **** 	   		}
+ 470:ir_heat.c     ****    		}
+ 471:ir_heat.c     **** 		}
+ 472:ir_heat.c     **** 		else if(interval != last_interval) {
+ 2332               	ode
+ 2333               		cpi r24,lo8(3)
+ 2334 0c9e 8091 0000 		brne .L87
+ 2335 0ca2 282F      		sts mode,__zero_reg__
+ 2336 0ca4 3327      		rjmp .L87
+ 2337 0ca6 27FD      	.L67:
+ 2339 0caa 8B81      	.LM200:
+ 2340 0cac 882F      		lds r24,interval
+ 2341 0cae 90E0      		mov r18,r24
+ 2342 0cb0 2817      		clr r19
+ 2343 0cb2 3907      		sbrc r18,7
+ 2344 0cb4 01F0      		com r19
+ 2345               		ldd r24,Y+3
+ 473:ir_heat.c     ****    		last_interval = interval;
+ 2346               	ode
+ 2347               		cpi r24,lo8(3)
+ 2348 0cb6 8091 0000 		brne .L87
+ 2349 0cba 8B83      		sts mode,__zero_reg__
+ 474:ir_heat.c     ****    		uint16_t temp;
+ 475:ir_heat.c     ****    		if(count<16) {
+ 2350               	25,lo8(1)
+ 2351               		std Y+17,r25
+ 2352 0cbc 8C81      	.L86:
+ 2353 0cbe 8031      		ldd r24,Y+18
+ 2354 0cc0 00F4      		ldd r18,Y+17
+ 476:ir_heat.c     ****    			temp = get_temperature(ADR_T_OBJ1);
+ 2355               	abs_threshold_down
+ 2356               		lds r19,(t_abs_threshold_down)+1
+ 2357 0cc2 87E0      		std Y+17,__zero_reg__
+ 2358 0cc4 0E94 0000 		ldd r24,Y+13
+ 2359 0cc8 9A83      		ldd r25,Y+14
+ 2360 0cca 8983      		cp r24,r18
+ 477:ir_heat.c     **** 	   		count++;
+ 2361               	_zero_reg__
+ 2362               		cp r18,r24
+ 2363 0ccc 8C81      		cpc r19,r25
+ 2364 0cce 8F5F      		brsh .L85
+ 2365 0cd0 8C83      		ldi r24,lo8(1)
+ 478:ir_heat.c     ****    			// Messwerte für den Mittelwert aufsummieren
+ 479:ir_heat.c     ****    			temp_sum += temp;
+ 2366               	Y+18,r24
+ 2367               	.L85:
+ 2368 0cd2 2B85      		lds r18,t_abs_threshold_down
+ 2369 0cd4 3C85      		lds r19,(t_abs_threshold_down)+1
+ 2370 0cd6 8981      		std Y+17,__zero_reg__
+ 2371 0cd8 9A81      		ldd r24,Y+13
+ 2372 0cda 820F      		ldd r25,Y+14
+ 2373 0cdc 931F      		cp r24,r18
+ 2374 0cde 9C87      		cpc r25,r19
+ 2375 0ce0 8B87      		brsh .L86
+ 2376               		ldi r25,lo8(1)
+ 2377               		std Y+17,r25
+ 480:ir_heat.c     ****    			//printf("Raw: %i\n", temp);
+ 481:ir_heat.c     ****    		}
+ 482:ir_heat.c     ****    	}
+ 483:ir_heat.c     **** 
+ 484:ir_heat.c     **** 		
+ 485:ir_heat.c     **** 		switch(mode) {
+ 2378               	o8(1)
+ 2379               		std Y+18,r24
+ 2380 0ce2 8091 0000 	.L85:
+ 2381 0ce6 282F      		lds r18,t_abs_threshold_down
+ 2382 0ce8 30E0      		lds r19,(t_abs_threshold_down)+1
+ 2383 0cea 388B      		std Y+17,__zero_reg__
+ 2384 0cec 2F87      		ldd r24,Y+13
+ 2385 0cee 8F85      		ldd r25,Y+14
+ 2386 0cf0 9889      		cp r24,r18
+ 2387 0cf2 8130      		cpc r25,r19
+ 2388 0cf4 9105      		brsh .L86
+ 2389 0cf6 01F0      		ldi r25,lo8(1)
+ 2390 0cf8 2F85      		std Y+17,r25
+ 2391 0cfa 3889      	.L86:
+ 2392 0cfc 2330      		ldd r24,Y+18
+ 2393 0cfe 3105      		ldd r18,Y+17
+ 2394 0d00 01F0      		and r24,r18
+ 2395 0d02 8F85      		tst r24
+ 2396 0d04 9889      		breq .L87
+ 2398 0d08 01F4      	.LM199:
+ 2399               		lds r24,mode
+ 486:ir_heat.c     **** 		case MODE_OFF:
+ 487:ir_heat.c     **** 			set_relais(0);
+ 2400               	d r25,Y+14
+ 2401               		cp r24,r18
+ 2402 0d0a 80E0      		cpc r25,r19
+ 2403 0d0c 90E0      		brsh .L86
+ 2404 0d0e 0E94 0000 		ldi r25,lo8(1)
+ 488:ir_heat.c     **** 			STATUS_LED1_ON;      // Grün
+ 2405               	.L85
+ 2406               		ldi r24,lo8(1)
+ 2407 0d12 ABE2      		std Y+18,r24
+ 2408 0d14 B0E0      	.L85:
+ 2409 0d16 EBE2      		lds r18,t_abs_threshold_down
+ 2410 0d18 F0E0      		lds r19,(t_abs_threshold_down)+1
+ 2411 0d1a 8081      		std Y+17,__zero_reg__
+ 2412 0d1c 8061      		ldd r24,Y+13
+ 2413 0d1e 8C93      		ldd r25,Y+14
+ 489:ir_heat.c     **** 			STATUS_LED2_OFF;
+ 2414               	1
+ 2415               		std Y+18,__zero_reg__
+ 2416 0d20 ABE2      		cp r18,r24
+ 2417 0d22 B0E0      		cpc r19,r25
+ 2418 0d24 EBE2      		brsh .L85
+ 2419 0d26 F0E0      		ldi r24,lo8(1)
+ 2420 0d28 8081      		std Y+18,r24
+ 2421 0d2a 877F      	.L85:
+ 2422 0d2c 8C93      		lds r18,t_abs_threshold_down
+ 2423 0d2e 00C0      		lds r19,(t_abs_threshold_down)+1
+ 2424               		std Y+17,__zero_reg__
+ 490:ir_heat.c     **** 			break;
+ 491:ir_heat.c     **** 		case MODE_ON:
+ 492:ir_heat.c     **** 			set_relais(1);
+ 2425               	13
+ 2426               		ldd r25,Y+14
+ 2427 0d30 81E0      		cp r24,r18
+ 2428 0d32 90E0      		cpc r25,r19
+ 2429 0d34 0E94 0000 		brsh .L86
+ 493:ir_heat.c     **** 			STATUS_LED1_ON;     // Orange
+ 2430               	pc r19,r25
+ 2431               		brsh .L85
+ 2432 0d38 ABE2      		ldi r24,lo8(1)
+ 2433 0d3a B0E0      		std Y+18,r24
+ 2434 0d3c EBE2      	.L85:
+ 2435 0d3e F0E0      		lds r18,t_abs_threshold_down
+ 2436 0d40 8081      		lds r19,(t_abs_threshold_down)+1
+ 2437 0d42 8061      		std Y+17,__zero_reg__
+ 2438 0d44 8C93      		ldd r24,Y+13
+ 494:ir_heat.c     **** 			STATUS_LED2_ON;
+ 2439               	Y+14
+ 2440               		cp r24,r18
+ 2441 0d46 ABE2      		cpc r25,r19
+ 2442 0d48 B0E0      		brsh .L86
+ 2443 0d4a EBE2      		ldi r25,lo8(1)
+ 2444 0d4c F0E0      		std Y+17,r25
+ 2445 0d4e 8081      	.L86:
+ 2446 0d50 8860      		ldd r24,Y+18
+ 2447 0d52 8C93      		ldd r18,Y+17
+ 2448 0d54 00C0      		and r24,r18
+ 2449               		tst r24
+ 495:ir_heat.c     **** 			break;
+ 496:ir_heat.c     **** 		case MODE_TEMP_PROT:
+ 497:ir_heat.c     **** 			set_relais(0);
+ 2450               	r19,(t_abs_threshold_down)+1
+ 2451               		std Y+17,__zero_reg__
+ 2452 0d56 80E0      		ldd r24,Y+13
+ 2453 0d58 90E0      		ldd r25,Y+14
+ 2454 0d5a 0E94 0000 		cp r24,r18
+ 498:ir_heat.c     **** 			STATUS_LED1_OFF;
+ 2455               	_zero_reg__
+ 2456               		cp r18,r24
+ 2457 0d5e ABE2      		cpc r19,r25
+ 2458 0d60 B0E0      		brsh .L85
+ 2459 0d62 EBE2      		ldi r24,lo8(1)
+ 2460 0d64 F0E0      		std Y+18,r24
+ 2461 0d66 8081      	.L85:
+ 2462 0d68 8F7E      		lds r18,t_abs_threshold_down
+ 2463 0d6a 8C93      		lds r19,(t_abs_threshold_down)+1
+ 499:ir_heat.c     **** 			STATUS_LED2_ON;      // Rot
+ 2464               	,__zero_reg__
+ 2465               		ldd r24,Y+13
+ 2466 0d6c ABE2      		ldd r25,Y+14
+ 2467 0d6e B0E0      		cp r24,r18
+ 2468 0d70 EBE2      		cpc r25,r19
+ 2469 0d72 F0E0      		brsh .L86
+ 2470 0d74 8081      		ldi r25,lo8(1)
+ 2471 0d76 8860      		std Y+17,r25
+ 2472 0d78 8C93      	.L86:
+ 2473 0d7a 00C0      		ldd r24,Y+18
+ 2474               		ldd r18,Y+17
+ 500:ir_heat.c     **** 			break;
+ 501:ir_heat.c     **** 		default:
+ 502:ir_heat.c     **** 			mode = MODE_OFF;
+ 2475               	abs_threshold_down
+ 2476               		lds r19,(t_abs_threshold_down)+1
+ 2477 0d7c 1092 0000 		std Y+17,__zero_reg__
+ 2478 0d80 00C0      		ldd r24,Y+13
+ 2479               		ldd r25,Y+14
+ 2480               		cp r24,r18
+ 2481               		cpc r25,r19
+ 2482               		brsh .L86
+ 2483               		ldi r25,lo8(1)
+ 2484               		std Y+17,r25
+ 2485               	.L86:
+ 2486               		ldd r24,Y+18
+ 2487               		ldd r18,Y+17
+ 2488               		and r24,r18
+ 2489               		tst r24
+ 2490               		breq .L87
+ 2492               	.LM199:
+ 2493               		lds r24,mode
+ 2494               		cpi r24,lo8(3)
+ 2495               		brne .L87
+ 2496               		sts mode,__zero_reg__
+ 2497               		rjmp .L87
+ 2498               	.L67:
+ 2500               	.LM200:
+ 2501               		lds r24,interval
+ 2502               		mov r18,r24
+ 2503               		clr r19
+ 2504               		sbrc r18,7
+ 2505               		com r19
+ 2506               		ldd r24,Y+3
+ 2507               		mov r24,r24
+ 2508               		ldi r25,lo8(0)
+ 2509               		cp r18,r24
+ 2510               		cpc r19,r25
+ 2511               		breq .L87
+ 2512               	.LBB2:
+ 2514               	.LM201:
+ 2515               		lds r24,interval
+ 2516               		std Y+3,r24
+ 2518               	.LM202:
+ 2519               		ldd r24,Y+4
+ 2520               		cpi r24,lo8(16)
+ 2521               		brsh .L87
+ 2523               	.LM203:
+ 2524               		ldi r24,lo8(7)
 DEFINED SYMBOLS
                             *ABS*:00000000 ir_heat.c
-C:\Users\Thorsten\AppData\Local\Temp/ccvtYawV.s:2      *ABS*:0000003f __SREG__
-C:\Users\Thorsten\AppData\Local\Temp/ccvtYawV.s:3      *ABS*:0000003e __SP_H__
-C:\Users\Thorsten\AppData\Local\Temp/ccvtYawV.s:4      *ABS*:0000003d __SP_L__
-C:\Users\Thorsten\AppData\Local\Temp/ccvtYawV.s:5      *ABS*:00000034 __CCP__
-C:\Users\Thorsten\AppData\Local\Temp/ccvtYawV.s:6      *ABS*:00000000 __tmp_reg__
-C:\Users\Thorsten\AppData\Local\Temp/ccvtYawV.s:7      *ABS*:00000001 __zero_reg__
-C:\Users\Thorsten\AppData\Local\Temp/ccvtYawV.s:91     .bss:00000000 off_counter
-C:\Users\Thorsten\AppData\Local\Temp/ccvtYawV.s:97     .data:00000000 t_la_threshold_up
-C:\Users\Thorsten\AppData\Local\Temp/ccvtYawV.s:102    .data:00000002 t_abs_threshold_up
-C:\Users\Thorsten\AppData\Local\Temp/ccvtYawV.s:107    .data:00000004 t_la_threshold_down
-C:\Users\Thorsten\AppData\Local\Temp/ccvtYawV.s:112    .data:00000006 t_abs_threshold_down
+C:\Users\Thorsten\AppData\Local\Temp/cc2GLwvv.s:2      *ABS*:0000003f __SREG__
+C:\Users\Thorsten\AppData\Local\Temp/cc2GLwvv.s:3      *ABS*:0000003e __SP_H__
+C:\Users\Thorsten\AppData\Local\Temp/cc2GLwvv.s:4      *ABS*:0000003d __SP_L__
+C:\Users\Thorsten\AppData\Local\Temp/cc2GLwvv.s:5      *ABS*:00000034 __CCP__
+C:\Users\Thorsten\AppData\Local\Temp/cc2GLwvv.s:6      *ABS*:00000000 __tmp_reg__
+C:\Users\Thorsten\AppData\Local\Temp/cc2GLwvv.s:7      *ABS*:00000001 __zero_reg__
+C:\Users\Thorsten\AppData\Local\Temp/cc2GLwvv.s:90     .data:00000000 interval
+C:\Users\Thorsten\AppData\Local\Temp/cc2GLwvv.s:97     .bss:00000000 off_counter
+C:\Users\Thorsten\AppData\Local\Temp/cc2GLwvv.s:103    .data:00000001 t_la_threshold_up
+C:\Users\Thorsten\AppData\Local\Temp/cc2GLwvv.s:108    .data:00000003 t_abs_threshold_up
+C:\Users\Thorsten\AppData\Local\Temp/cc2GLwvv.s:113    .data:00000005 t_la_threshold_down
+C:\Users\Thorsten\AppData\Local\Temp/cc2GLwvv.s:118    .data:00000007 t_abs_threshold_down
                              .bss:00000001 c.1651
-C:\Users\Thorsten\AppData\Local\Temp/ccvtYawV.s:119    .text:00000000 __vector_9
-                            *COM*:00000001 interval
-C:\Users\Thorsten\AppData\Local\Temp/ccvtYawV.s:114    .bss:00000002 c.1659
-C:\Users\Thorsten\AppData\Local\Temp/ccvtYawV.s:160    .text:0000002e __vector_16
+C:\Users\Thorsten\AppData\Local\Temp/cc2GLwvv.s:125    .text:00000000 __vector_9
+C:\Users\Thorsten\AppData\Local\Temp/cc2GLwvv.s:120    .bss:00000002 c.1659
+C:\Users\Thorsten\AppData\Local\Temp/cc2GLwvv.s:166    .text:0000002e __vector_16
                             *COM*:00000001 mode
-C:\Users\Thorsten\AppData\Local\Temp/ccvtYawV.s:290    .text:000000f6 __vector_1
-C:\Users\Thorsten\AppData\Local\Temp/ccvtYawV.s:435    .text:000001bc __vector_18
+C:\Users\Thorsten\AppData\Local\Temp/cc2GLwvv.s:162    .bss:00000003 running.1691
+C:\Users\Thorsten\AppData\Local\Temp/cc2GLwvv.s:305    .text:000000f6 __vector_1
+C:\Users\Thorsten\AppData\Local\Temp/cc2GLwvv.s:528    .text:00000240 __vector_18
                             *COM*:00000001 r_in
                             *COM*:00000020 rbuf
-C:\Users\Thorsten\AppData\Local\Temp/ccvtYawV.s:501    .text:00000218 __vector_19
+C:\Users\Thorsten\AppData\Local\Temp/cc2GLwvv.s:594    .text:0000029c __vector_19
                             *COM*:00000001 t_in
                             *COM*:00000001 t_out
                             *COM*:00000020 tbuf
-C:\Users\Thorsten\AppData\Local\Temp/ccvtYawV.s:580    .text:00000290 tbuflen
-C:\Users\Thorsten\AppData\Local\Temp/ccvtYawV.s:610    .text:000002ac UART_putchar
-C:\Users\Thorsten\AppData\Local\Temp/ccvtYawV.s:682    .text:00000312 rbuflen
+C:\Users\Thorsten\AppData\Local\Temp/cc2GLwvv.s:673    .text:00000314 tbuflen
+C:\Users\Thorsten\AppData\Local\Temp/cc2GLwvv.s:703    .text:00000330 UART_putchar
+C:\Users\Thorsten\AppData\Local\Temp/cc2GLwvv.s:775    .text:00000396 rbuflen
                             *COM*:00000001 r_out
-C:\Users\Thorsten\AppData\Local\Temp/ccvtYawV.s:711    .text:0000032e UART_getchar
-C:\Users\Thorsten\AppData\Local\Temp/ccvtYawV.s:770    .text:00000378 UART_first_init
-C:\Users\Thorsten\AppData\Local\Temp/ccvtYawV.s:832    .text:000003b2 print_array
+C:\Users\Thorsten\AppData\Local\Temp/cc2GLwvv.s:804    .text:000003b2 UART_getchar
+C:\Users\Thorsten\AppData\Local\Temp/cc2GLwvv.s:863    .text:000003fc UART_first_init
+C:\Users\Thorsten\AppData\Local\Temp/cc2GLwvv.s:925    .text:00000436 print_array
                             *COM*:0000000c t_array
-C:\Users\Thorsten\AppData\Local\Temp/ccvtYawV.s:919    .text:0000042a add_value
+C:\Users\Thorsten\AppData\Local\Temp/cc2GLwvv.s:1012   .text:000004ae add_value
                             *COM*:00000002 slope2
-C:\Users\Thorsten\AppData\Local\Temp/ccvtYawV.s:1075   .text:00000562 get_slope
-C:\Users\Thorsten\AppData\Local\Temp/ccvtYawV.s:1190   .text:00000628 lookahead_temp
-C:\Users\Thorsten\AppData\Local\Temp/ccvtYawV.s:1269   .text:0000069a get_temperature
-C:\Users\Thorsten\AppData\Local\Temp/ccvtYawV.s:156    .bss:00000003 last.1911
-C:\Users\Thorsten\AppData\Local\Temp/ccvtYawV.s:1401   .text:00000742 set_relais
-C:\Users\Thorsten\AppData\Local\Temp/ccvtYawV.s:1489   .text:000007ba my_function
-C:\Users\Thorsten\AppData\Local\Temp/ccvtYawV.s:1543   .text:000007ca main
+C:\Users\Thorsten\AppData\Local\Temp/cc2GLwvv.s:1168   .text:000005e6 get_slope
+C:\Users\Thorsten\AppData\Local\Temp/cc2GLwvv.s:1283   .text:000006ac lookahead_temp
+C:\Users\Thorsten\AppData\Local\Temp/cc2GLwvv.s:1362   .text:0000071e get_temperature
+C:\Users\Thorsten\AppData\Local\Temp/cc2GLwvv.s:293    .bss:00000004 last.1918
+C:\Users\Thorsten\AppData\Local\Temp/cc2GLwvv.s:1494   .text:000007c6 set_relais
+C:\Users\Thorsten\AppData\Local\Temp/cc2GLwvv.s:1582   .text:0000083e my_function
+C:\Users\Thorsten\AppData\Local\Temp/cc2GLwvv.s:1636   .text:0000084e main
 
 UNDEFINED SYMBOLS
-fdevopen
-printf
 putchar
+printf
+puts
+fdevopen
 __divmodhi4
 i2c_start
 i2c_write
@@ -2627,7 +2751,6 @@ i2c_rep_start
 i2c_read_ack
 i2c_stop
 __udivmodhi4
-puts
 i2c_init
 __do_copy_data
 __do_clear_bss
