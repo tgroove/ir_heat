@@ -10,7 +10,7 @@
 .GCCPATH   "C:\WinAVR"
 .GCCMAKE   AUTO
 .TARGET    "ir_heat.hex"
-.SOURCE    "ir_heat.c" "i2c_mstr.c"
+.SOURCE    "ir_heat.c" "ir_heat.h" "i2c_mstr.c" "i2c_mstr.h"
 
 .TRACE              ; Activate micro trace
 
@@ -48,6 +48,7 @@ X12   I2C(1K 90) PC4 PC5  ; slave address in decimal
 
 X11  TTY( 4800 8 0 0 1 1) node9 node8
 R8	PD1 node8 1k
+
 
 
 

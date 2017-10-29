@@ -5,7 +5,7 @@
 #include <avr/io.h>
 #include <util/twi.h>
 
-#include "i2c_master.h"
+#include "i2c_mstr.h"
 
 #define F_SCL 100000UL // SCL frequency
 #define Prescaler 1
@@ -179,4 +179,5 @@ void i2c_stop(void)
 
 
  	
+
 
