@@ -60,6 +60,9 @@
 
 #define OFF_COUNTER		5
 
+#define TIMER1_STOP		TCCR1B = 0
+#define TIMER1_RUN		TCCR1B = (0<<CS12) | (1<<CS11) | (0<<CS10)
+
 #define	MODE_OFF			0
 #define	MODE_ON			1
 #define	MODE_TEMP_PROT	3
@@ -93,6 +96,12 @@ SIGNAL(SIG_OVERFLOW2) {
 	interval++;
 }
 
+SIGNAL(SIG_OVERFLOW1) {
+	TIMER1_STOP;
+	TCNT1H = 0;
+	TCNT1L = 0;
+}
+
 SIGNAL(SIG_OVERFLOW0) {
 	static uint8_t	c = 0;
 	uint8_t slow=0;
@@ -112,9 +121,10 @@ SIGNAL(SIG_OVERFLOW0) {
 
 SIGNAL(SIG_INTERRUPT0) {
 	static uint8_t running = 0;
+	static uint8_t last_interval = 0xff;
 	
-	if(running){
-//		printf("X");
+	if(running | TCNT1H | TCNT1L){
+		printf("X");
 		return;
 	}
 	running = 1;
@@ -123,11 +133,13 @@ SIGNAL(SIG_INTERRUPT0) {
 	uint8_t c=0;
 	EIMSK = 0;
 	sei();
-//	printf("In");
+	printf("In");
 	for(i=0;i<2000;i++) if((PIND & (1<<SWITCH))) c++;
-//	printf(" %i ", c);
+	printf(" %i ", c);
 
 	if(c < 100) {
+		TCNT1L = 1;
+		TIMER1_RUN;
 		switch(mode) {
 		case MODE_OFF:
 			if(off_counter) mode = MODE_TEMP_PROT;
@@ -139,10 +151,11 @@ SIGNAL(SIG_INTERRUPT0) {
 			mode = MODE_OFF;
 		}
 	}
-//	printf("Out\n");
+	printf("Out\n");
 	EIFR = (1<<INTF0);
 	EIMSK = (1<<INT0);
 	running = 0;
+	printf("Exit\n");
 }
 
 
@@ -350,6 +363,12 @@ int main(void) {
 	TCCR0B = (0<<CS02) | (1<<CS01) | (1<<CS00);
 	TIMSK0 = (1<<TOIE0);
 	
+	
+	TCCR1A = 0;
+	TIMER1_STOP;
+	TCCR1C = 0;
+	TIMSK1 = (1<<TOIE1);
+	
 	// Interrupt für Taster initialisieren
 	EICRA = (1<<ISC01);
 	EIMSK = (1<<INT0);
@@ -399,7 +418,7 @@ int main(void) {
    	   	add_value(temp);									// Neue Temperatur zu Array hinzufügen
    	   	//print_array();
    	   	slope_raw = get_slope();						// Aktuelle Steigung ermitteln
-				if(slope_raw<0) slope_raw = 0;
+				//if(slope_raw<0) slope_raw = 0;
    	   	slope = (15*slope + 10*slope_raw)/16;		// Steigung wird mit einer Dämpfung von 16 gedämpft
    	   	printf("slope_raw: %i, slope: %i ", slope_raw, slope);
 				//lookahead=lookahead_temp(slope, 5);   	   	
@@ -491,6 +510,7 @@ int main(void) {
 			set_relais(0);
 			STATUS_LED1_OFF;
 			STATUS_LED2_ON;      // Rot
+			slope = 0;
 			break;
 		default:
 			mode = MODE_OFF;

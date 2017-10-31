@@ -41,6 +41,8 @@ D7	VDD node7
 R7 node7x node7 500
 X7 ND2 PB2 PB2 node7x
 
+K0	PD2  VSS LATCHED
+
 R20 VDD PC4	 10k
 R21 VDD PC5  10k
 
