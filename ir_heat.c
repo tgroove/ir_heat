@@ -121,10 +121,10 @@ SIGNAL(SIG_OVERFLOW0) {
 
 SIGNAL(SIG_INTERRUPT0) {
 	static uint8_t running = 0;
-	static uint8_t last_interval = 0xff;
+//	static uint8_t last_interval = 0xff;
 	
 	if(running | TCNT1H | TCNT1L){
-		printf("X");
+//		printf("X");
 		return;
 	}
 	running = 1;
@@ -133,9 +133,9 @@ SIGNAL(SIG_INTERRUPT0) {
 	uint8_t c=0;
 	EIMSK = 0;
 	sei();
-	printf("In");
+//	printf("In");
 	for(i=0;i<2000;i++) if((PIND & (1<<SWITCH))) c++;
-	printf(" %i ", c);
+//	printf(" %i ", c);
 
 	if(c < 100) {
 		TCNT1L = 1;
@@ -151,11 +151,11 @@ SIGNAL(SIG_INTERRUPT0) {
 			mode = MODE_OFF;
 		}
 	}
-	printf("Out\n");
+//	printf("Out\n");
 	EIFR = (1<<INTF0);
 	EIMSK = (1<<INT0);
 	running = 0;
-	printf("Exit\n");
+//	printf("Exit\n");
 }
 
 
@@ -387,6 +387,9 @@ int main(void) {
 	uint8_t	count=0;
 	uint8_t  last_interval = 0xff;
 	uint8_t	startup = 3;
+	uint8_t	on_counter = 0;
+	int16_t	factor;
+	int16_t	integral = 0;
 	
 	temp_sum = 0;
 	
@@ -416,65 +419,98 @@ int main(void) {
 				}
    	   	printf("Temp: %i, ", temp);
    	   	add_value(temp);									// Neue Temperatur zu Array hinzufügen
+   	   	
+   	   	factor = (temp - 620) / -25;					// Fakort ermitteln
+   	   	if(factor < 0) factor = 0;
+   	   	
    	   	//print_array();
    	   	slope_raw = get_slope();						// Aktuelle Steigung ermitteln
-				//if(slope_raw<0) slope_raw = 0;
-   	   	slope = (15*slope + 10*slope_raw)/16;		// Steigung wird mit einer Dämpfung von 16 gedämpft
-   	   	printf("slope_raw: %i, slope: %i ", slope_raw, slope);
-				//lookahead=lookahead_temp(slope, 5);   	   	
-   	   	//printf("Prognose: %i\n", lookahead);
-   	   	printf("Ambient: %i\n", get_temperature(ADR_T_A));
+   	   	
+				if(slope_raw > factor) { 						// "Steigungsintegral"
+					integral = 8*(integral + slope_raw)/factor;
+				}
+				else {
+					integral = integral / 2;
+				}
 				
-				// Je nach aktueller Temperatur und Steigung in Temperaturschutz gehen 	   	
-	   		if(temp > 480) {
-	   			// Temperatur > 48°C
-	   			if(slope > 30) {
-	   				off_counter = OFF_COUNTER+1;
-	   				printf("Temperature Protect Rule 48, ");
-	   			}
-	   		}
-	   		else if(temp > 450) {
-	   			// Temperatur > 45°C
-	   			if(slope > 50) {
-	   				off_counter = OFF_COUNTER+1;
-	   				printf("Temperature Protect Rule 45, ");
-	   			}
-	   		}
-	   		else if(temp > 400) {
-	   			// Temperatur > 40°C
-	   			if(slope > 60) {
-	   				off_counter = OFF_COUNTER+1;
-	   				printf("Temperature Protect Rule 40, ");
-	   			}
-	   		}
-	   		else if(temp > 350) {
-	   			// Temperatur > 35°C
-	   			if(slope > 80) {
-	   				off_counter = OFF_COUNTER+1;
-	   				printf("Temperature Protect Rule 35, ");
-               }
-	   		}
-	   		else if(temp > 300) {
-	   			// Temperatur > 30°C
-	   			if(slope > 120) {
-	   				off_counter = OFF_COUNTER+1;
-		   			printf("Temperature Protect Rule 30, ");
-		   		}
-	   		}
-	   		else {
-	   			// Ansonsten
-	   			if(slope > 160) {
-	   				off_counter = OFF_COUNTER+1;
-	   				printf("Temperature Protect General Rule, ");
-	   			}
-	   		}
+/*				//if(slope_raw<0) slope_raw = 0;
+				if(slope_raw<0) {									// Fallende Temperaturen werden stärker gewichtet
+	   	   	slope = (7*slope + 10*slope_raw)/8;		// Negative Steigung wird mit einer Dämpfung von 8 gedämpft
+				}
+				else {
+	   	   	slope = (15*slope + 10*slope_raw)/16;	// Positive Steigung wird mit einer Dämpfung von 16 gedämpft
+	   	   }
+   	   	printf("slope_raw: %i, slope: %i ", slope_raw, slope);
+     	   	printf("Ambient: %i\n", get_temperature(ADR_T_A));
+*/				
+   	   	printf("sl_raw: %i, sl: %i, f: %i, int: %i\n", slope_raw, slope, factor, integral);
 
+				if((slope > 45) || (integral > 500)) {
+					on_counter++;
+		   		printf("On-Counter: %i; \n", on_counter);
+		   		if(on_counter > 3) off_counter = OFF_COUNTER+1;
+				}			
+				else {
+					on_counter = 0;
+				}		
+
+			
+/*				// Je nach aktueller Temperatur und Steigung in Temperaturschutz gehen
+				if(slope_raw > 1){	   						// nur aktiv werden, wenn die Temperatur aktuell steigt	
+		   		if(temp > 480) {
+		   			// Temperatur > 48°C
+		   			if(slope > 30) {
+		   				on_counter++;		   				
+			   			printf("Temperature Protect Rule 48, ");
+		   			}
+		   		}
+		   		else if(temp > 450) {
+		   			// Temperatur > 45°C
+		   			if(slope > 50) {
+		   				on_counter++;
+		   				printf("Temperature Protect Rule 45, ");
+		   			}
+		   		}
+		   		else if(temp > 400) {
+		   			// Temperatur > 40°C
+		   			if(slope > 60) {
+		   				on_counter++;
+		   				printf("Temperature Protect Rule 40, ");
+		   			}
+		   		}
+		   		else if(temp > 350) {
+		   			// Temperatur > 35°C
+		   			if(slope > 80) {
+		   				on_counter++;
+		   				printf("Temperature Protect Rule 35, ");
+  	             }
+		   		}
+		   		else if(temp > 300) {
+		   			// Temperatur > 30°C
+		   			if(slope > 120) {
+		   				on_counter++;
+			   			printf("Temperature Protect Rule 30, ");
+			   		}
+		   		}
+		   		else if(slope > 160) {
+	   				on_counter++;
+		   			printf("Temperature Protect General Rule, ");
+		   		}
+		   		else {
+		   			on_counter = 0;
+		   		}
+		   		
+		   		if(on_counter) printf("On-Counter: %i; \n", on_counter);
+		   		if(on_counter > 3) off_counter = OFF_COUNTER+1;
+   			}
+*/
    	   }
+
    		if(off_counter) {
    			// Protection Counter läuft
   				off_counter--;
   				if(mode == MODE_ON) mode = MODE_TEMP_PROT;
-				printf("Counter: %i; \n", off_counter);
+				printf("Off-Counter: %i; \n", off_counter);
    		}
    		else {
    			if(mode == MODE_TEMP_PROT) mode = MODE_OFF;
@@ -484,13 +520,10 @@ int main(void) {
 			// In jedem Interval 1x die Temperatur abrufen
 			// und für den Mittelwert aufsummieren
    		last_interval = interval;
-   		//uint16_t temp;
-   		if(count<16) {
-   			//temp = get_temperature(ADR_T_OBJ1);
+    		if(count<16) {
 	   		count++;
    			// Messwerte für den Mittelwert aufsummieren
    			temp_sum += get_temperature(ADR_T_OBJ1);
-   			//printf("Raw: %i\n", temp);
    		}
    	}
 
