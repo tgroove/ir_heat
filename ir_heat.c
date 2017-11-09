@@ -464,16 +464,17 @@ int main(void) {
 					integral = integral / 4;
 				}
 				
-				slope = (31*slope + 10*slope_raw)/32; 		// Steigung dämpfen
+//				slope = (31*slope + 10*slope_raw)/32; 		// Steigung dämpfen
 
-/*				
-				//if(slope_raw<0) slope_raw = 0;
+				
+				if(slope_raw < -10) slope_raw = -10;
 				if(slope_raw<0) {									// Fallende Temperaturen werden stärker gewichtet
 	   	   	slope = (7*slope + 10*slope_raw)/8;		// Negative Steigung wird mit einer Dämpfung von 8 gedämpft
 				}
 				else {
-	   	   	slope = (15*slope + 10*slope_raw)/16;	// Positive Steigung wird mit einer Dämpfung von 16 gedämpft
+	   	   	slope = (31*slope + 10*slope_raw)/32;	// Positive Steigung wird mit einer Dämpfung von 16 gedämpft
 	   	   }
+/*
    	   	printf("slope_raw: %i, slope: %i ", slope_raw, slope);
      	   	printf("Ambient: %i\n", get_temperature(ADR_T_A));
 */				
@@ -481,7 +482,7 @@ int main(void) {
    	   	printf("sl_raw: %i, sl: %i, f: %i, int: %i\n", slope_raw, slope, factor, integral);
 
 				if( (get_last_slope() >= 0)
-				 && ((slope > 45) || (integral > 500))) {
+				 && ((slope > 55) || (integral > 500))) {
 					on_counter++;
 		   		printf("On-Counter: %i; \n", on_counter);
 	   			if(on_counter > 1) off_counter = OFF_COUNTER+1;

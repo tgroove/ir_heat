@@ -13,11 +13,11 @@ Size before:
 ir_heat.elf  :
 section     size      addr
 .data        164   8388864
-.text       8354         0
+.text       8478         0
 .bss          97   8389028
-.stab       6360         0
+.stab       6396         0
 .stabstr    3604         0
-Total      18579
+Total      18739
 
 
 
@@ -59,11 +59,11 @@ Size after:
 ir_heat.elf  :
 section     size      addr
 .data        164   8388864
-.text       8352         0
+.text       8478         0
 .bss          97   8389028
-.stab       6360         0
+.stab       6396         0
 .stabstr    3604         0
-Total      18577
+Total      18739
 
 
 
