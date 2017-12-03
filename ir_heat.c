@@ -10,12 +10,13 @@
 
 #include <avr\io.h>              // Most basic include files
 #include <avr\interrupt.h>       // Add the necessary ones
-#include <avr\signal.h>          // here
+//#include <avr\signal.h>          // here
 #include <avr\wdt.h>
 
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include	<util/delay.h>
 
 #include "i2c_mstr.h"
 #include "ir_heat.h"
@@ -63,9 +64,17 @@
 #define TIMER1_STOP		TCCR1B = 0
 #define TIMER1_RUN		TCCR1B = (0<<CS12) | (1<<CS11) | (0<<CS10)
 
-#define	MODE_OFF			0
-#define	MODE_ON			1
-#define	MODE_TEMP_PROT	3
+#define	MODE_OFF				0
+#define	MODE_ON				1
+#define	MODE_ON_NO_PROT	2
+#define	MODE_TEMP_PROT		3
+
+#define	BEEP_SHORT			1
+#define	BEEP_2SHORT			2
+#define	BEEP_LONG			3
+#define	BEEP_XLONG			4
+#define	BEEP_2LONG			5
+#define	BEEP_SHORT_LONG	6
 
 // Define here the global static variables
 //
@@ -83,6 +92,8 @@ int16_t 	t_array[6];
 uint8_t	off_counter = 0;
 uint8_t	mode;
 int16_t	slope2;
+uint8_t	flash_button = 0;
+uint8_t	flash_LED = 0;
 
 /*
 uint16_t	t_la_threshold_up 	=  300;
@@ -106,18 +117,33 @@ SIGNAL(SIG_OVERFLOW1) {
 
 // LED Flasher
 SIGNAL(SIG_OVERFLOW0) {
-	static uint8_t	c = 0;
+	static uint8_t	c1 = 0;
+	static uint8_t c2 = 0;
 	uint8_t slow=0;
-	c++;
+	c1++;
+	c2++;
+	
+	// Tasten LED
 	if (mode==MODE_TEMP_PROT) {
-		if(c > (6<<slow)) {
+		if(c1 > (6<<slow)) {
 			FLASH_LED_ON;
 		}
 	}
-	if(c > (10<<slow)) {
-		c=0;
+	if(c1 > (10<<slow)) {
+		c1 = 0;
 		FLASH_LED_OFF;
 	}
+	
+	// Status LED
+	if (mode==MODE_ON_NO_PROT) {
+		if(c2 > 120) {
+			STATUS_LED1_OFF;	// rot
+		}
+	}
+	if(c2 > 135) {
+		c2 = 0;
+		STATUS_LED1_ON; 		// orange
+	}	
 }
 
 
@@ -134,26 +160,50 @@ SIGNAL(SIG_INTERRUPT0) {
 		return;
 	}
 	running = 1;
+	wdt_reset();
 	
 	uint16_t i;
-	uint8_t 	c = 0;
+	uint16_t c = 0;
 	EIMSK = 0;
 	sei();
-//	printf("In");
-	for(i=0;i<2000;i++) if((PIND & (1<<SWITCH))) c++;
-//	printf(" %i ", c);
+	//printf("In");
+	for(i=0;i<1000;i++) if((PIND & (1<<SWITCH))) c++;
+	//printf(" %i ", c);
 
-	if(c < 100) {
+	if(c < 200) {
 		TCNT1L = 1;
 		TIMER1_RUN;
 		switch(mode) {
 		case MODE_OFF:
-			if(off_counter) mode = MODE_TEMP_PROT;
-			else mode = MODE_ON;
+			mode = MODE_ON;
+			set_relais(1);
+			STATUS_LED1_ON;			// orange
+			STATUS_LED2_ON;
+			c = 0;
+			while((!(PIND & (1<<SWITCH))) && (c < 300)) {
+				c++;
+				_delay_ms (10);
+			}
+			//printf("c: %i", c);
+
+			if(c < 300) {
+				// normal einnschalten
+				mode = MODE_ON;
+			}
+			else {
+				// einschalten, aber ohne Hitzeschutz
+				mode = MODE_ON_NO_PROT;
+				printf("Temperature Protection Off!\n");
+				STATUS_LED1_OFF;		// rot
+				STATUS_LED2_ON;
+				beep(BEEP_SHORT_LONG);
+			}
 			break;
 		case MODE_ON:
+		case MODE_ON_NO_PROT:
 		case MODE_TEMP_PROT:
 		default:
+			printf("\nxXx\n");
 			mode = MODE_OFF;
 		}
 	}
@@ -161,7 +211,7 @@ SIGNAL(SIG_INTERRUPT0) {
 	EIFR 		= (1<<INTF0);
 	EIMSK 	= (1<<INT0);
 	running 	= 0;
-//	printf("Exit\n");
+	//printf("Exit\n");
 }
 
 
@@ -344,6 +394,43 @@ uint16_t get_temperature(uint8_t adr) {
 }
 
 
+
+void _beep(uint16_t duration_ms){
+	uint16_t i;
+	BUZZER_ON;
+	for(i=0;i<(duration_ms/20);i++) _delay_ms(20);
+	BUZZER_OFF;
+}
+
+
+void	beep(uint8_t type){
+	cli();
+	wdt_reset();
+	switch(type){
+	case BEEP_SHORT:
+		_beep(120);
+		break;
+	case BEEP_LONG:
+		_beep(350);
+		break;
+	case BEEP_XLONG:
+		_beep(850);
+		break;
+	case BEEP_2SHORT:
+		_beep(80);
+		_delay_ms(80);
+		_beep(80);
+		break;
+	case BEEP_SHORT_LONG:
+		_beep(100);
+		_delay_ms(180);
+		_beep(350);		
+	}
+	sei();	
+}
+
+
+
 //***************************************************
 //
 // Relais Ein- und Ausschalen
@@ -411,14 +498,14 @@ int main(void) {
 	EIMSK = (1<<INT0);
 	
 
-	printf("\nStart\n");
+	printf("\n\nStart\n\n");
 	STATUS_LED1_ON;		// grüne LED ein
 	STATUS_LED2_OFF;		// rote LED aus
 	set_relais(0);			// Relais aus
 	mode = MODE_OFF;
 	
 	int16_t 	temp, temp_sum = 0;
-	int16_t	slope_raw, slope;
+	int16_t	slope_raw, slope = 0;
 	uint8_t	count=0;
 	uint8_t  last_interval = 0xff;
 	uint8_t	startup = 3;
@@ -432,10 +519,11 @@ int main(void) {
    while(1) {
    	if(!(interval < 16)) { 					// Alle 16x (alle 4 Sekunden) Temperatur checken
    		wdt_reset();                  	// Whatchdog zurücksetzen
+
+			temp = temp_sum / count;				// Mittelwert der 16 Messungen ermitteln
+
    		interval=0;
    		count=0;
-
-			temp = temp_sum >> 4;				// Mittelwert der 16 Messungen ermitteln
 			temp_sum = 0;
 	      //printf("Temp: %i\n", temp);
 	      if(temp==0) {
@@ -481,11 +569,28 @@ int main(void) {
 
    	   	printf("sl_raw: %i, sl: %i, f: %i, int: %i\n", slope_raw, slope, factor, integral);
 
-				if( (get_last_slope() >= 0)
-				 && ((slope > 55) || (integral > 500))) {
-					on_counter++;
+				if((slope > 55) || (integral > 500)) {
 		   		printf("On-Counter: %i; \n", on_counter);
-	   			if(on_counter > 1) off_counter = OFF_COUNTER+1;
+	   			if(mode == MODE_ON_NO_PROT){
+						on_counter++;
+	   				if(on_counter==3){
+	   					beep(BEEP_SHORT);
+	   					on_counter = 0;
+	   				}
+  					}
+   				else {
+   					if(get_last_slope() >= 0) {
+							on_counter++;
+			   			if(on_counter > 2) {
+   							off_counter = OFF_COUNTER+1;
+   							on_counter = 2;
+   							beep(BEEP_XLONG);
+		   				}
+		   				else {
+	   						beep(BEEP_LONG);
+   						}
+   					}
+   				}
 				}			
 				else {
 					on_counter = 0;
@@ -575,11 +680,13 @@ int main(void) {
 			STATUS_LED1_ON;      // Grün
 			STATUS_LED2_OFF;
 			off_counter = 0;
+			on_counter = 0;
 			break;
 		case MODE_ON:
+			STATUS_LED1_ON;      // Grün
+		case MODE_ON_NO_PROT:
 			set_relais(1);
-			STATUS_LED1_ON;     // Orange
-			STATUS_LED2_ON;
+			STATUS_LED2_ON;      // Rot
 			break;
 		case MODE_TEMP_PROT:
 			set_relais(0);
@@ -590,10 +697,10 @@ int main(void) {
 			break;
 		default:
 			mode = MODE_OFF;
-		}		
+		}
+		
+		_delay_ms(100);		
    }
 }
-
-
 
 

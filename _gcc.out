@@ -1,4 +1,4 @@
-set -e; avr-gcc -MM -mmcu=atmega168 -I. -std=gnu99 -O0 -gstabs -Wa,-adhlns=ir_heat.lst -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums  -Wall -Wstrict-prototypes ir_heat.c \
+set -e; avr-gcc -MM -mmcu=atmega168 -I. -std=gnu99 -O1 -gstabs -Wa,-adhlns=ir_heat.lst -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums  -Wall -Wstrict-prototypes ir_heat.c \
 	| sed 's,\(.*\)\.o[ :]*,\1.o \1.d : ,g' > ir_heat.d; \
 	[ -s ir_heat.d ] || rm -f ir_heat.d
 
@@ -12,27 +12,30 @@ warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 Size before:
 ir_heat.elf  :
 section     size      addr
-.data        164   8388864
-.text       8478         0
-.bss          97   8389028
-.stab       6396         0
-.stabstr    3604         0
-Total      18739
+.data        198   8388864
+.text       7640         0
+.bss         100   8389062
+.stab       6840         0
+.stabstr    3659         0
+Total      18437
 
 
 
 
 Compiling: ir_heat.c
-avr-gcc -c -mmcu=atmega168 -I. -std=gnu99 -O0 -gstabs -Wa,-adhlns=ir_heat.lst -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums  -Wall -Wstrict-prototypes ir_heat.c -o ir_heat.o
-In file included from ir_heat.c:13:
-c:/winavr/lib/gcc/../../avr/include/avr\signal.h:36:2: warning: #warning "This header file is obsolete.  Use <avr/interrupt.h>."
+avr-gcc -c -mmcu=atmega168 -I. -std=gnu99 -O1 -gstabs -Wa,-adhlns=ir_heat.lst -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums  -Wall -Wstrict-prototypes ir_heat.c -o ir_heat.o
+ir_heat.c: In function '__vector_1':
+ir_heat.c:199: warning: implicit declaration of function 'beep'
 ir_heat.c: In function 'get_temperature':
-ir_heat.c:324: warning: unused variable 'pec_read'
+ir_heat.c:374: warning: unused variable 'pec_read'
+ir_heat.c: At top level:
+ir_heat.c:406: warning: conflicting types for 'beep'
+ir_heat.c:199: warning: previous implicit declaration of 'beep' was here
 ir_heat.c: In function 'main':
-ir_heat.c:377: warning: large integer implicitly truncated to unsigned type
+ir_heat.c:464: warning: large integer implicitly truncated to unsigned type
 
 Linking: ir_heat.elf
-avr-gcc -mmcu=atmega168 -I. -std=gnu99 -O0 -gstabs -Wa,-adhlns=ir_heat.o -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums  -Wall -Wstrict-prototypes ir_heat.o i2c_mstr.o  --output ir_heat.elf -Wl,-u,vfprintf -lprintf_flt  -lm -Wl,-Map=ir_heat.map -Wl,--cref
+avr-gcc -mmcu=atmega168 -I. -std=gnu99 -O1 -gstabs -Wa,-adhlns=ir_heat.o -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums  -Wall -Wstrict-prototypes ir_heat.o i2c_mstr.o  --output ir_heat.elf -Wl,-u,vfprintf -lprintf_flt  -lm -Wl,-Map=ir_heat.map -Wl,--cref
 
 Creating load file for Flash: ir_heat.hex
 avr-objcopy -O ihex -R .eeprom ir_heat.elf ir_heat.hex
@@ -58,12 +61,12 @@ c:\winavr\bin\avr-objcopy.exe: --change-section-lma .noinit+0xff800000 never use
 Size after:
 ir_heat.elf  :
 section     size      addr
-.data        164   8388864
-.text       8478         0
-.bss          97   8389028
-.stab       6396         0
-.stabstr    3604         0
-Total      18739
+.data        198   8388864
+.text       7640         0
+.bss         100   8389062
+.stab       6840         0
+.stabstr    3659         0
+Total      18437
 
 
 

@@ -13,6 +13,8 @@ int16_t 	lookahead_temp(int8_t slope, uint8_t steps);
 uint16_t get_temperature(uint8_t adr);
 void 		set_relais(uint8_t on);
 int16_t	get_last_slope(void);
+void 		_beep(uint16_t duration_ms);
 int 		main(void);
 
 #endif // IR_HEAT_H
+

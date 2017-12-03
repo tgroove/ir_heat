@@ -106,7 +106,7 @@ EXTRAINCDIRS =
 #CFLAGS += -std=c99
 #CFLAGS += -std=gnu99
 
-CFLAGS =  -std=gnu99 -O0 -gstabs -Wa,-adhlns=$(<:.c=.lst) -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums $(patsubst %,-I%,$(EXTRAINCDIRS)) -Wall -Wstrict-prototypes
+CFLAGS =  -std=gnu99 -O1 -gstabs -Wa,-adhlns=$(<:.c=.lst) -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums $(patsubst %,-I%,$(EXTRAINCDIRS)) -Wall -Wstrict-prototypes
 
 # Optional assembler flags.
 #  -Wa,...:   tell GCC to pass this to the assembler.
