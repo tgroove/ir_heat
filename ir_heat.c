@@ -380,9 +380,9 @@ int main(void) {
 	set_relais(0);			// Relais aus
 	mode = MODE_OFF;
 	
-	int16_t temp, temp_sum;
+	int16_t temp, temp_sum, temp_a;
 //	int16_t	lookahead;
-	int16_t 	slope;
+	int16_t 	slope, max_slope;
 	int16_t	slope_raw;
 	uint8_t	count=0;
 	uint8_t  last_interval = 0xff;
@@ -420,7 +420,9 @@ int main(void) {
    	   	printf("Temp: %i, ", temp);
    	   	add_value(temp);									// Neue Temperatur zu Array hinzufügen
    	   	
-   	   	factor = (temp - 620) / -25;					// Fakort ermitteln
+   	   	//factor = (temp - 620) / -25;					// Fakort ermitteln
+   	   	temp_a = get_temperature(ADR_T_A);
+   	   	factor = (temp - 900 + 2*temp_a ) / -25;					// Fakort ermitteln
    	   	if(factor < 0) factor = 0;
    	   	
    	   	//print_array();
@@ -443,67 +445,21 @@ int main(void) {
    	   	printf("slope_raw: %i, slope: %i ", slope_raw, slope);
      	   	printf("Ambient: %i\n", get_temperature(ADR_T_A));
 */				
-   	   	printf("sl_raw: %i, sl: %i, f: %i, int: %i\n", slope_raw, slope, factor, integral);
 
-				if((slope > 45) || (integral > 500)) {
+				// temp_a 150 -> 45
+				// temp_a 100 -> 60
+   	   	max_slope = temp_a * -0.3 + 90;
+
+   	   	printf("sl_raw: %i, sl: %i, s_max: %i, f: %i, int: %i\n", slope_raw, slope, max_slope, factor, integral);
+
+				if((slope > max_slope) || (integral > 500)) {
 					on_counter++;
 		   		printf("On-Counter: %i; \n", on_counter);
 		   		if(on_counter > 3) off_counter = OFF_COUNTER+1;
 				}			
 				else {
 					on_counter = 0;
-				}		
-
-			
-/*				// Je nach aktueller Temperatur und Steigung in Temperaturschutz gehen
-				if(slope_raw > 1){	   						// nur aktiv werden, wenn die Temperatur aktuell steigt	
-		   		if(temp > 480) {
-		   			// Temperatur > 48°C
-		   			if(slope > 30) {
-		   				on_counter++;		   				
-			   			printf("Temperature Protect Rule 48, ");
-		   			}
-		   		}
-		   		else if(temp > 450) {
-		   			// Temperatur > 45°C
-		   			if(slope > 50) {
-		   				on_counter++;
-		   				printf("Temperature Protect Rule 45, ");
-		   			}
-		   		}
-		   		else if(temp > 400) {
-		   			// Temperatur > 40°C
-		   			if(slope > 60) {
-		   				on_counter++;
-		   				printf("Temperature Protect Rule 40, ");
-		   			}
-		   		}
-		   		else if(temp > 350) {
-		   			// Temperatur > 35°C
-		   			if(slope > 80) {
-		   				on_counter++;
-		   				printf("Temperature Protect Rule 35, ");
-  	             }
-		   		}
-		   		else if(temp > 300) {
-		   			// Temperatur > 30°C
-		   			if(slope > 120) {
-		   				on_counter++;
-			   			printf("Temperature Protect Rule 30, ");
-			   		}
-		   		}
-		   		else if(slope > 160) {
-	   				on_counter++;
-		   			printf("Temperature Protect General Rule, ");
-		   		}
-		   		else {
-		   			on_counter = 0;
-		   		}
-		   		
-		   		if(on_counter) printf("On-Counter: %i; \n", on_counter);
-		   		if(on_counter > 3) off_counter = OFF_COUNTER+1;
-   			}
-*/
+				}					
    	   }
 
    		if(off_counter) {
@@ -550,6 +506,7 @@ int main(void) {
 		}		
    }
 }
+
 
 
 
