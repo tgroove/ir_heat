@@ -26,6 +26,7 @@
 #define	ADR_T_A			0x06
 #define	ADR_T_OBJ1		0x07
 #define	ADR_T_OBJ2		0x08
+#define	DEFAULT_TEMP	150
 
 
 #define __STDIO_FDEVOPEN_COMPAT_12						
@@ -388,7 +389,7 @@ uint16_t get_temperature(uint8_t adr) {
 	
 	i2c_stop();
 	
-	if(raw & 0x8000) return 0;
+	if(raw & 0x8000) return DEFAULT_TEMP;
 	
 	return (raw / 5 - 2731); 					// 1 = 0.1°C
 }
@@ -545,14 +546,16 @@ int main(void) {
    	   	printf("Temp: %i, ", temp);
    	   	add_value(temp);									// Neue Temperatur zu Array hinzufügen
    	   	slope_raw = get_slope();						// Aktuelle Steigung ermitteln
+   	   	if (slope_raw < -100) slope_raw = -100;
    	   	
-   	   	//factor = (temp - 620) / -25;					// Fakort ermitteln
+   	   	factor = (temp - 620) / -25;					// Fakort ermitteln
    	   	temp_a = get_temperature(ADR_T_A);
-   	   	factor = (temp - 900 + 2*temp_a ) / -25;					// Fakort ermitteln
+   	   	//factor = (temp - 900 + 2*temp_a ) / -25;					// Fakort ermitteln
    	   	if(factor < 0) factor = 0;
    	   	   	   	
 				if(slope_raw > factor) { 						// "Steigungsintegral"
 					integral = 8*(integral + slope_raw) / factor;
+					if(integral > 2000) integral = 2000;
 				}
 				else {
 					integral = integral / 4;
@@ -563,7 +566,7 @@ int main(void) {
 				
 				if(slope_raw < -10) slope_raw = -10;
 				if(slope_raw<0) {									// Fallende Temperaturen werden stärker gewichtet
-	   	   	slope = (7*slope + 10*slope_raw)/8;		// Negative Steigung wird mit einer Dämpfung von 8 gedämpft
+	   	   	slope = (3*slope + 10*slope_raw)/4;		// Negative Steigung wird mit einer Dämpfung von 8 gedämpft
 				}
 				else {
 	   	   	slope = (31*slope + 10*slope_raw)/32;	// Positive Steigung wird mit einer Dämpfung von 16 gedämpft
@@ -575,23 +578,25 @@ int main(void) {
 
 				// temp_a 150 -> 45
 				// temp_a 100 -> 60
-   	   	max_slope = temp_a * -0.3 + 90;
+//   	   	max_slope = temp_a * -1.3 + 240;
+//   	   	max_slope = max_slope * (600-temp)/50;
+				max_slope = (float)temp * -0.8 + 360;
 
-   	   	printf("sl_raw: %i, sl: %i, s_max: %i, f: %i, int: %i\n", slope_raw, slope, max_slope, factor, integral);
+   	   	printf("sl_raw: %i, sl: %i, s_max: %i, f: %i, int: %i t_a: %i\n", slope_raw, slope, max_slope, factor, integral, temp_a);
 
 				if((slope > max_slope) || (integral > 500)) {
 					on_counter++;
 		   		printf("On-Counter: %i; \n", on_counter);
 	   			if(mode == MODE_ON_NO_PROT){
-						on_counter++;
+						//on_counter++;
 	   				if(on_counter==3){
 	   					beep(BEEP_SHORT);
 	   					on_counter = 0;
 	   				}
   					}
    				else {
-   					if(get_last_slope() >= 0) {
-							on_counter++;
+   					if(get_last_slope() > 0) {
+							//on_counter++;
 			   			if(on_counter > 2) {
    							off_counter = OFF_COUNTER+1;
    							on_counter = 2;
@@ -600,6 +605,9 @@ int main(void) {
 		   				else {
 	   						beep(BEEP_LONG);
    						}
+   					}
+   					else {
+   						if(slope_raw<0) on_counter=0;
    					}
    				}
 				}			
