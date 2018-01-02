@@ -12,12 +12,12 @@ warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 Size before:
 ir_heat.elf  :
 section     size      addr
-.data        218   8388864
-.text       8540         0
-.bss         100   8389082
-.stab       6816         0
-.stabstr    3658         0
-Total      19332
+.data        188   8388864
+.text       7640         0
+.bss         102   8389052
+.stab       7056         0
+.stabstr    3731         0
+Total      18717
 
 
 
@@ -25,9 +25,9 @@ Total      19332
 Compiling: ir_heat.c
 avr-gcc -c -mmcu=atmega168 -I. -std=gnu99 -O1 -gstabs -Wa,-adhlns=ir_heat.lst -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums  -Wall -Wstrict-prototypes ir_heat.c -o ir_heat.o
 ir_heat.c: In function 'get_temperature':
-ir_heat.c:375: warning: unused variable 'pec_read'
+ir_heat.c:391: warning: unused variable 'pec_read'
 ir_heat.c: In function 'main':
-ir_heat.c:465: warning: large integer implicitly truncated to unsigned type
+ir_heat.c:481: warning: large integer implicitly truncated to unsigned type
 
 Linking: ir_heat.elf
 avr-gcc -mmcu=atmega168 -I. -std=gnu99 -O1 -gstabs -Wa,-adhlns=ir_heat.o -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums  -Wall -Wstrict-prototypes ir_heat.o i2c_mstr.o  --output ir_heat.elf -Wl,-u,vfprintf -lprintf_flt  -lm -Wl,-Map=ir_heat.map -Wl,--cref
@@ -56,12 +56,12 @@ c:\winavr\bin\avr-objcopy.exe: --change-section-lma .noinit+0xff800000 never use
 Size after:
 ir_heat.elf  :
 section     size      addr
-.data        218   8388864
-.text       8548         0
-.bss         100   8389082
-.stab       6792         0
-.stabstr    3644         0
-Total      19302
+.data        188   8388864
+.text       7648         0
+.bss         102   8389052
+.stab       7056         0
+.stabstr    3731         0
+Total      18725
 
 
 

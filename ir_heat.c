@@ -297,6 +297,22 @@ void UART_first_init(void) {
 
 
 
+
+int16_t exp_slope(int16_t temp) {
+	return 10 * (-temp/16 + 32);
+}
+
+
+int16_t get_slope2() {
+	static int16_t last_slope = 0;
+//	last_slope = (200*(t_array[5]-t_array[2]) / 16 +  2*last_slope) / 3;
+	last_slope = (16*(t_array[5]-t_array[2]) +  2*last_slope) / 3;
+	return last_slope;
+}
+
+
+
+
 //*********************************************
 //
 // Gibt den Temperatur Ringspeicher
@@ -374,8 +390,8 @@ uint16_t get_temperature(uint8_t adr) {
 	uint8_t 	lo, hi, pec;
 	uint8_t	pec_read[6];
 
-	i2c_start(MLX90614_WRITE);
-	i2c_write(adr);
+	if(i2c_start(MLX90614_WRITE)) return DEFAULT_TEMP;
+	if(i2c_write(adr)) return DEFAULT_TEMP;
 	
 	ret = i2c_rep_start(MLX90614_READ);
 	if(ret) {
@@ -517,6 +533,9 @@ int main(void) {
 	uint8_t	on_counter = 0;
 	int16_t	factor;
 	int16_t	integral = 0;
+	
+	int16_t	slope_std = 0;
+	int16_t	slope_real = 0;
 		
 	// Interrupts aktivieren
 	sei();
@@ -571,6 +590,10 @@ int main(void) {
 				else {
 	   	   	slope = (31*slope + 10*slope_raw)/32;	// Positive Steigung wird mit einer Dämpfung von 16 gedämpft
 	   	   }
+	   	
+	   		slope_std = exp_slope(temp);
+	   		slope_real = get_slope2();
+	   	
 /*
    	   	printf("slope_raw: %i, slope: %i ", slope_raw, slope);
      	   	printf("Ambient: %i\n", get_temperature(ADR_T_A));
@@ -582,9 +605,11 @@ int main(void) {
 //   	   	max_slope = max_slope * (600-temp)/50;
 				max_slope = (float)temp * -0.8 + 360;
 
-   	   	printf("sl_raw: %i, sl: %i, s_max: %i, f: %i, int: %i t_a: %i\n", slope_raw, slope, max_slope, factor, integral, temp_a);
+//   	   	printf("sl_raw: %i, sl: %i, s_max: %i, f: %i, int: %i t_a: %i\n", slope_raw, slope, max_slope, factor, integral, temp_a);
+   	   	printf("exp_s: %i, s2: %i, s: %i\n", slope_std, slope_real, get_slope());
 
-				if((slope > max_slope) || (integral > 500)) {
+//				if((slope > max_slope) || (integral > 500)) {
+				if(slope_real > slope_std) {
 					on_counter++;
 		   		printf("On-Counter: %i; \n", on_counter);
 	   			if(mode == MODE_ON_NO_PROT){
@@ -670,5 +695,6 @@ int main(void) {
 		_delay_ms(100);		
    }
 }
+
 
 

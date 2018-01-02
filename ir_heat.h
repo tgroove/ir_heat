@@ -16,7 +16,10 @@ int16_t	get_last_slope(void);
 void 		_beep(uint16_t duration_ms);
 void		beep(uint8_t type);
 int 		main(void);
+int16_t	exp_slope(int16_t temp);
+int16_t 	get_slope2(void);
 
 #endif // IR_HEAT_H
+
 
 
