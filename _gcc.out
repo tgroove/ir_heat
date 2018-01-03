@@ -12,12 +12,12 @@ warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 Size before:
 ir_heat.elf  :
 section     size      addr
-.data        188   8388864
-.text       7640         0
-.bss         102   8389052
-.stab       7056         0
-.stabstr    3731         0
-Total      18717
+.data        190   8388864
+.text       7740         0
+.bss         102   8389054
+.stab       7104         0
+.stabstr    3738         0
+Total      18874
 
 
 
@@ -56,12 +56,12 @@ c:\winavr\bin\avr-objcopy.exe: --change-section-lma .noinit+0xff800000 never use
 Size after:
 ir_heat.elf  :
 section     size      addr
-.data        188   8388864
-.text       7648         0
-.bss         102   8389052
-.stab       7056         0
-.stabstr    3731         0
-Total      18725
+.data        190   8388864
+.text       7740         0
+.bss         102   8389054
+.stab       7104         0
+.stabstr    3738         0
+Total      18874
 
 
 

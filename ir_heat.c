@@ -428,7 +428,7 @@ void	beep(uint8_t type){
 		_beep(120);
 		break;
 	case BEEP_LONG:
-		_beep(350);
+		_beep(250);
 		break;
 	case BEEP_XLONG:
 		_beep(850);
@@ -533,6 +533,7 @@ int main(void) {
 	uint8_t	on_counter = 0;
 	int16_t	factor;
 	int16_t	integral = 0;
+	int8_t	fx = 0;
 	
 	int16_t	slope_std = 0;
 	int16_t	slope_real = 0;
@@ -591,7 +592,7 @@ int main(void) {
 	   	   	slope = (31*slope + 10*slope_raw)/32;	// Positive Steigung wird mit einer Dämpfung von 16 gedämpft
 	   	   }
 	   	
-	   		slope_std = exp_slope(temp);
+	   		slope_std = exp_slope(temp) + fx;
 	   		slope_real = get_slope2();
 	   	
 /*
@@ -606,7 +607,7 @@ int main(void) {
 				max_slope = (float)temp * -0.8 + 360;
 
 //   	   	printf("sl_raw: %i, sl: %i, s_max: %i, f: %i, int: %i t_a: %i\n", slope_raw, slope, max_slope, factor, integral, temp_a);
-   	   	printf("exp_s: %i, s2: %i, s: %i\n", slope_std, slope_real, get_slope());
+   	   	printf("exp_s: %i, s2: %i, fx: %i\n", slope_std, slope_real, fx);
 
 //				if((slope > max_slope) || (integral > 500)) {
 				if(slope_real > slope_std) {
@@ -622,13 +623,20 @@ int main(void) {
    				else {
    					if(get_last_slope() > 0) {
 							//on_counter++;
-			   			if(on_counter > 2) {
+			   			if((on_counter > 8) || (temp > 520)) {
    							off_counter = OFF_COUNTER+1;
-   							on_counter = 2;
-   							beep(BEEP_XLONG);
+   							on_counter = 0;
+   							if(mode == MODE_ON) {
+	   							beep(BEEP_XLONG);
+   								if(temp<500) {
+   									fx = fx+20;
+   								}
+   							}
 		   				}
 		   				else {
-	   						beep(BEEP_LONG);
+		   					if( ((on_counter > 4) && ((on_counter % 2) == 1)) || (temp > 500) ) {
+		   						beep(BEEP_LONG);
+		   					}
    						}
    					}
    					else {
