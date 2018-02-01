@@ -1,3 +1,6 @@
+set -e; avr-gcc -MM -mmcu=atmega168 -I. -std=gnu99 -O1 -gstabs -Wa,-adhlns=i2cmstr.lst -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums  -Wall -Wstrict-prototypes i2cmstr.c \
+	| sed 's,\(.*\)\.o[ :]*,\1.o \1.d : ,g' > i2cmstr.d; \
+	[ -s i2cmstr.d ] || rm -f i2cmstr.d
 
 -------- begin --------
 avr-gcc (WinAVR 20100110) 4.3.3
@@ -5,9 +8,61 @@ Copyright (C) 2008 Free Software Foundation, Inc.
 This is free software; see the source for copying conditions.  There is NO
 warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
+
+Size before:
+ir_heat.elf  :
+section     size      addr
+.data        202   8388864
+.text       7472         0
+.bss         102   8389066
+.stab       6936         0
+.stabstr    4048         0
+Total      18760
+
+
+
+
+Compiling: i2cmstr.c
+avr-gcc -c -mmcu=atmega168 -I. -std=gnu99 -O1 -gstabs -Wa,-adhlns=i2cmstr.lst -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums  -Wall -Wstrict-prototypes i2cmstr.c -o i2cmstr.o
+i2cmstr.c: In function 'i2c_init':
+i2cmstr.c:25: warning: large integer implicitly truncated to unsigned type
+
+Linking: ir_heat.elf
+avr-gcc -mmcu=atmega168 -I. -std=gnu99 -O1 -gstabs -Wa,-adhlns=ir_heat.o -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums  -Wall -Wstrict-prototypes ir_heat.o i2cmstr.o  --output ir_heat.elf -Wl,-u,vfprintf -lprintf_flt  -lm -Wl,-Map=ir_heat.map -Wl,--cref
+
+Creating load file for Flash: ir_heat.hex
+avr-objcopy -O ihex -R .eeprom ir_heat.elf ir_heat.hex
+
+Creating load file for EEPROM: ir_heat.eep
+avr-objcopy -j .eeprom --set-section-flags=.eeprom="alloc,load" \
+	--change-section-lma .eeprom=0 -O ihex ir_heat.elf ir_heat.eep
+c:\winavr\bin\avr-objcopy.exe: --change-section-lma .eeprom=0x00000000 never used
+
+Creating Extended Listing: ir_heat.lss
+avr-objdump -h -S ir_heat.elf > ir_heat.lss
+
+Creating Symbol Table: ir_heat.sym
+avr-nm -n ir_heat.elf > ir_heat.sym
+
+Converting to AVR COFF: ir_heat.cof
+avr-objcopy --debugging --change-section-address .data-0x800000 --change-section-address .bss-0x800000 --change-section-address .noinit-0x800000 --change-section-address .eeprom-0x810000 -O coff-ext-avr ir_heat.elf ir_heat.cof   # Extended COFF. Supported in VMLAB from rel. 3.10
+c:\winavr\bin\avr-objcopy.exe: --change-section-vma .eeprom+0xff7f0000 never used
+c:\winavr\bin\avr-objcopy.exe: --change-section-lma .eeprom+0xff7f0000 never used
+c:\winavr\bin\avr-objcopy.exe: --change-section-vma .noinit+0xff800000 never used
+c:\winavr\bin\avr-objcopy.exe: --change-section-lma .noinit+0xff800000 never used
+
+Size after:
+ir_heat.elf  :
+section     size      addr
+.data        202   8388864
+.text       7478         0
+.bss         102   8389066
+.stab       6948         0
+.stabstr    4048         0
+Total      18778
+
+
+
 Errors: none
 -------- end --------
 
-
-Linking: ir_heat.elf
-avr-gcc -mmcu=atmega168 -I. -std=gnu99 -O1 -gstabs -Wa,-adhlns=ir_heat.o -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums  -Wall -Wstrict-prototypes ir_heat.o i2c_mstr.o  --output ir_heat.elf -Wl,-u,vfprintf -lprintf_flt  -lm -Wl,-Map=ir_heat.map -Wl,--cref

@@ -5,7 +5,7 @@
 // ***********************************************************
 
 #ifndef F_CPU
-#define F_CPU 1000000UL
+#define F_CPU 2000000UL
 #endif
 
 #include <avr\io.h>              // Most basic include files
@@ -16,9 +16,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <avr/power.h>
 #include	<util/delay.h>
 
-#include "i2c_mstr.h"
+#include "i2c_mast.h"
 #include "ir_heat.h"
 
 #define 	MLX90614_WRITE	(0x5A<<1)
@@ -399,10 +400,10 @@ uint16_t get_temperature(uint8_t adr) {
 		i2c_rep_start(MLX90614_READ);
    }
 
-	lo = i2c_read_ack();
-	hi = i2c_read_ack();
+	lo = i2c_readAck();
+	hi = i2c_readAck();
 	raw = (uint16_t)(hi<<8)+lo;
-	pec = i2c_read_ack();
+	pec = i2c_readAck();
 	
 	i2c_stop();
 	
@@ -492,8 +493,7 @@ int main(void) {
 	wdt_enable(WDTO_8S);
 	
 	// Set clock divider to 4 => 2MHz
-	CLKPR = (1<<CLKPCE);
-	CLKPR = (0<<CLKPS3) | (0<<CLKPS2) | (1<<CLKPS1) | (0<<CLKPS0);
+	clock_prescale_set(clock_div_4);
 	
 	// UART initialisieren
 	UART_first_init();
@@ -727,6 +727,7 @@ int main(void) {
 		_delay_ms(100);		
    }
 }
+
 
 
 

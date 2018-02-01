@@ -5,7 +5,7 @@
 #include <avr/io.h>
 #include <util/twi.h>
 
-#include "i2c_master.h"
+#include "i2c_mast.h"
 
 #define F_SCL 100000UL // SCL frequency
 #define Prescaler 1
@@ -20,7 +20,7 @@ uint8_t i2c_start(uint8_t address)
 {
 	// reset TWI control register
 	TWCR = 0;
-	// transmit START condition 
+	// transmit START condition
 	TWCR = (1<<TWINT) | (1<<TWSTA) | (1<<TWEN);
 	// wait for end of transmission
 	while( !(TWCR & (1<<TWINT)) );
@@ -60,7 +60,7 @@ uint8_t i2c_read_ack(void)
 {
 	
 	// start TWI module and acknowledge data after reception
-	TWCR = (1<<TWINT) | (1<<TWEN) | (1<<TWEA); 
+	TWCR = (1<<TWINT) | (1<<TWEN) | (1<<TWEA);
 	// wait for end of transmission
 	while( !(TWCR & (1<<TWINT)) );
 	// return received data from TWDR
@@ -147,3 +147,4 @@ void i2c_stop(void)
 	// transmit STOP condition
 	TWCR = (1<<TWINT) | (1<<TWEN) | (1<<TWSTO);
 }
+

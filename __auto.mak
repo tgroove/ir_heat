@@ -57,7 +57,7 @@ OPT = s
 
 
 # List C source files here. (C dependencies are automatically generated.)
-SRC = ir_heat.c i2c_mstr.c 
+SRC = ir_heat.c i2cmstr.c 
 
 # If there is more than one source file, append them above, or modify and
 # uncomment the following:
