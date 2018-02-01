@@ -288,6 +288,7 @@ void UART_first_init(void) {
 //
 	UBRR0 = 12;										 		// 4800 BPS
 	
+	//UCSR0A |= (1<<U2X0);
 	UCSR0B = (1<<RXCIE0)|(1<<TXEN0)|(1<<RXEN0);	// 8 Databits, receive and transmit enabled, receive and transmit complete interrupt enabled
 	UCSR0C = (1<<UCSZ01)|(1<<UCSZ00);
 	
@@ -299,7 +300,7 @@ void UART_first_init(void) {
 
 
 int16_t exp_slope(int16_t temp) {
-	return 10 * (-temp/16 + 32);
+	return 10 * (-temp/16 + 32) + 15;
 }
 
 
@@ -428,7 +429,7 @@ void	beep(uint8_t type){
 		_beep(120);
 		break;
 	case BEEP_LONG:
-		_beep(250);
+		_beep(200);
 		break;
 	case BEEP_XLONG:
 		_beep(850);
@@ -444,6 +445,7 @@ void	beep(uint8_t type){
 		_beep(350);		
 	}
 	sei();	
+	printf("Beep\n");
 }
 
 
@@ -489,6 +491,10 @@ int main(void) {
 	wdt_reset();
 	wdt_enable(WDTO_8S);
 	
+	// Set clock divider to 4 => 2MHz
+	CLKPR = (1<<CLKPCE);
+	CLKPR = (0<<CLKPS3) | (0<<CLKPS2) | (1<<CLKPS1) | (0<<CLKPS0);
+	
 	// UART initialisieren
 	UART_first_init();
 	i2c_init();
@@ -531,6 +537,7 @@ int main(void) {
 	uint8_t  last_interval = 0xff;
 	uint8_t	startup = 3;
 	uint8_t	on_counter = 0;
+	int8_t	beep_counter = 0;
 	int16_t	factor;
 	int16_t	integral = 0;
 	int8_t	fx = 0;
@@ -592,8 +599,21 @@ int main(void) {
 	   	   	slope = (31*slope + 10*slope_raw)/32;	// Positive Steigung wird mit einer Dämpfung von 16 gedämpft
 	   	   }
 	   	
-	   		slope_std = exp_slope(temp) + fx;
+
 	   		slope_real = get_slope2();
+
+				//printf("bc: %i,sr: %i", beep_counter, slope_real);
+				if(beep_counter > 0) {
+					beep_counter++;
+					if((slope_real < 0)) {
+						fx = fx+20;
+						beep_counter = -10;
+					}
+				}
+				
+				if(fx > 60) fx= 60;
+
+	   		slope_std = exp_slope(temp) + fx;
 	   	
 /*
    	   	printf("slope_raw: %i, slope: %i ", slope_raw, slope);
@@ -607,7 +627,7 @@ int main(void) {
 				max_slope = (float)temp * -0.8 + 360;
 
 //   	   	printf("sl_raw: %i, sl: %i, s_max: %i, f: %i, int: %i t_a: %i\n", slope_raw, slope, max_slope, factor, integral, temp_a);
-   	   	printf("exp_s: %i, s2: %i, fx: %i\n", slope_std, slope_real, fx);
+   	   	printf("exp_s: %i, s2: %i, bc: %i, fx: %i\n", slope_std, slope_real, beep_counter, fx);
 
 //				if((slope > max_slope) || (integral > 500)) {
 				if(slope_real > slope_std) {
@@ -617,25 +637,28 @@ int main(void) {
 						//on_counter++;
 	   				if(on_counter==3){
 	   					beep(BEEP_SHORT);
+	   					beep_counter=1;
 	   					on_counter = 0;
 	   				}
   					}
    				else {
    					if(get_last_slope() > 0) {
 							//on_counter++;
-			   			if((on_counter > 8) || (temp > 520)) {
+			   			if((on_counter > 11) || (temp > 520)) {
    							off_counter = OFF_COUNTER+1;
    							on_counter = 0;
    							if(mode == MODE_ON) {
 	   							beep(BEEP_XLONG);
    								if(temp<500) {
-   									fx = fx+20;
+				   					beep_counter=1;
+   									//fx = fx+20;
    								}
    							}
 		   				}
 		   				else {
-		   					if( ((on_counter > 4) && ((on_counter % 2) == 1)) || (temp > 500) ) {
+		   					if( ((on_counter > 4) && ((on_counter % 3) == 0)) || (temp > 500) ) {
 		   						beep(BEEP_LONG);
+		   						beep_counter = 1;
 		   					}
    						}
    					}
@@ -682,6 +705,7 @@ int main(void) {
 			STATUS_LED2_OFF;
 			off_counter = 0;
 			on_counter = 0;
+			beep_counter = 0;
 			break;
 		case MODE_ON:
 			STATUS_LED1_ON;      // Grün
