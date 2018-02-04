@@ -1,6 +1,6 @@
-set -e; avr-gcc -MM -mmcu=atmega168 -I. -std=gnu99 -O1 -gstabs -Wa,-adhlns=i2cmstr.lst -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums  -Wall -Wstrict-prototypes i2cmstr.c \
-	| sed 's,\(.*\)\.o[ :]*,\1.o \1.d : ,g' > i2cmstr.d; \
-	[ -s i2cmstr.d ] || rm -f i2cmstr.d
+set -e; avr-gcc -MM -mmcu=atmega168 -I. -std=gnu99 -O1 -gstabs -Wa,-adhlns=ir_heat.lst -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums  -Wall -Wstrict-prototypes ir_heat.c \
+	| sed 's,\(.*\)\.o[ :]*,\1.o \1.d : ,g' > ir_heat.d; \
+	[ -s ir_heat.d ] || rm -f ir_heat.d
 
 -------- begin --------
 avr-gcc (WinAVR 20100110) 4.3.3
@@ -12,23 +12,32 @@ warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 Size before:
 ir_heat.elf  :
 section     size      addr
-.data        202   8388864
-.text       7472         0
-.bss         102   8389066
-.stab       6936         0
-.stabstr    4048         0
-Total      18760
+.data        316   8388864
+.text      13474         0
+.bss         116   8389180
+.stab      14568         0
+.stabstr    8666         0
+Total      37140
 
 
 
 
-Compiling: i2cmstr.c
-avr-gcc -c -mmcu=atmega168 -I. -std=gnu99 -O1 -gstabs -Wa,-adhlns=i2cmstr.lst -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums  -Wall -Wstrict-prototypes i2cmstr.c -o i2cmstr.o
-i2cmstr.c: In function 'i2c_init':
-i2cmstr.c:25: warning: large integer implicitly truncated to unsigned type
+Compiling: ir_heat.c
+avr-gcc -c -mmcu=atmega168 -I. -std=gnu99 -O1 -gstabs -Wa,-adhlns=ir_heat.lst -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums  -Wall -Wstrict-prototypes ir_heat.c -o ir_heat.o
+ir_heat.c:111: warning: function declaration isn't a prototype
+ir_heat.c: In function '__vector_9':
+ir_heat.c:126: warning: unused variable 'usFract'
+ir_heat.c: In function 'get_temperature':
+ir_heat.c:421: warning: implicit declaration of function 'i2c_rep_start'
+ir_heat.c:426: warning: implicit declaration of function 'i2c_readAck'
+ir_heat.c:416: warning: unused variable 'pec_read'
+ir_heat.c: In function 'main':
+ir_heat.c:507: warning: large integer implicitly truncated to unsigned type
+ir_heat.c:791:1: warning: "/*" within comment
+ir_heat.c:582: warning: unused variable 'dist'
 
 Linking: ir_heat.elf
-avr-gcc -mmcu=atmega168 -I. -std=gnu99 -O1 -gstabs -Wa,-adhlns=ir_heat.o -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums  -Wall -Wstrict-prototypes ir_heat.o i2cmstr.o  --output ir_heat.elf -Wl,-u,vfprintf -lprintf_flt  -lm -Wl,-Map=ir_heat.map -Wl,--cref
+avr-gcc -mmcu=atmega168 -I. -std=gnu99 -O1 -gstabs -Wa,-adhlns=ir_heat.o -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums  -Wall -Wstrict-prototypes ir_heat.o i2cmstr.o vl53l0x.o  --output ir_heat.elf -Wl,-u,vfprintf -lprintf_flt  -lm -Wl,-Map=ir_heat.map -Wl,--cref
 
 Creating load file for Flash: ir_heat.hex
 avr-objcopy -O ihex -R .eeprom ir_heat.elf ir_heat.hex
@@ -54,12 +63,12 @@ c:\winavr\bin\avr-objcopy.exe: --change-section-lma .noinit+0xff800000 never use
 Size after:
 ir_heat.elf  :
 section     size      addr
-.data        202   8388864
-.text       7478         0
-.bss         102   8389066
-.stab       6948         0
-.stabstr    4048         0
-Total      18778
+.data        316   8388864
+.text      13458         0
+.bss         116   8389180
+.stab      14544         0
+.stabstr    8666         0
+Total      37100
 
 
 

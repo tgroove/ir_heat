@@ -792,10 +792,13 @@ uint16_t readRangeContinuousMillimeters( statInfo_t *extraStats ) {
   uint8_t tempBuffer[12];
   uint16_t temp;
   startTimeout();
+//  return temp;
   while ((readReg(RESULT_INTERRUPT_STATUS) & 0x07) == 0) {
     if (checkTimeoutExpired())
     {
       g_isTimeout = true;
+      printf("T2\m");
+
       return 65535;
     }
   }
@@ -816,7 +819,7 @@ uint16_t readRangeContinuousMillimeters( statInfo_t *extraStats ) {
     // 9,8: AmbientRateRtnMegaCps  [mcps], uint16_t, fixpoimt9.7
     // A,B: uncorrected distance [mm], uint16_t
     readMulti(0x14, tempBuffer, 12);
-    extraStats->rangeStatus =  tempBuffer[0x00]>>3;
+    extraStats->rangeStatus =  tempBuffer[0x00]; //>>3;
     extraStats->spadCnt     = (tempBuffer[0x02]<<8) | tempBuffer[0x03];
     extraStats->signalCnt   = (tempBuffer[0x06]<<8) | tempBuffer[0x07];
     extraStats->ambientCnt  = (tempBuffer[0x08]<<8) | tempBuffer[0x09];
@@ -845,6 +848,7 @@ uint16_t readRangeSingleMillimeters( statInfo_t *extraStats ) {
   while (readReg(SYSRANGE_START) & 0x01){
     if (checkTimeoutExpired()){
       g_isTimeout = true;
+      printf("T1\m");
       return 65535;
     }
   }
@@ -1033,3 +1037,4 @@ bool performSingleRefCalibration(uint8_t vhv_init_byte)
 
   return true;
 }
+

@@ -10,7 +10,7 @@
 .GCCPATH   "C:\WinAVR"
 .GCCMAKE   AUTO
 .TARGET    "ir_heat.hex"
-.SOURCE    "ir_heat.c" "ir_heat.h"  "i2cmstr.c" "i2cmstr.h"
+.SOURCE    "ir_heat.c" "ir_heat.h"  "i2cmstr.c" "i2cmstr.h" "VL53L0X.c" "VL53L0X.h"
 
 .TRACE              ; Activate micro trace
 

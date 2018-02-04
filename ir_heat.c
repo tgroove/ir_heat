@@ -21,6 +21,7 @@
 
 #include "i2c_mast.h"
 #include "ir_heat.h"
+#include "VL53L0X.h"
 
 #define 	MLX90614_WRITE	(0x5A<<1)
 #define 	MLX90614_READ	(MLX90614_WRITE+1)
@@ -104,10 +105,32 @@ uint16_t	t_la_threshold_down 	=  250;
 uint16_t	t_abs_threshold_down	=  250;
 */
 
+volatile uint32_t g_Millis=0;
+
+// Return ellapsed time since startup in [ms]
+uint32_t millis(){
+    uint32_t m;
+    uint8_t oldSREG = SREG;
+     // disable interrupts while we read timer0_millis or we might get an
+    // inconsistent value (e.g. in the middle of a write to timer0_millis)
+    cli();
+    m = g_Millis;
+    SREG = oldSREG;
+    return m;
+}
 
 // Clock Timer
 SIGNAL(SIG_OVERFLOW2) {
 	interval++;
+	//*************************
+	static uint8_t usFract=0;
+	g_Millis += MILLIS_INC;
+//	usFract  += MILLIS_INC_FRACT>>3;// 680 / 8 =  85.0
+//	if( usFract >= 1000>>3 ){		//1000 / 8 = 125.0
+//		usFract -= 1000>>3;			//Fractional part added up to 1 ms
+//		g_Millis++;
+//	}
+	//**************************
 }
 
 SIGNAL(SIG_OVERFLOW1) {
@@ -498,6 +521,7 @@ int main(void) {
 	// UART initialisieren
 	UART_first_init();
 	i2c_init();
+	//initMillis();
 	
 	interval=0;
 	
@@ -527,6 +551,15 @@ int main(void) {
 	set_relais(0);			// Relais aus
 	mode = MODE_OFF;
 	
+	initVL53L0X(1);	
+	// lower the return signal rate limit (default is 0.25 MCPS)	
+	setSignalRateLimit(0.1);	
+	// increase laser pulse periods (defaults are 14 and 10 PCLKs)	
+	//setVcselPulsePeriod(VcselPeriodPreRange, 18);	
+	//setVcselPulsePeriod(VcselPeriodFinalRange, 14);	
+	//setMeasurementTimingBudget( 100 * 1000UL );		
+	// integrate over 500 ms per measurement
+	
 //	int16_t temp, temp_sum, temp_a;
 //	int16_t	lookahead;
 //	int16_t 	slope, max_slope;
@@ -544,6 +577,9 @@ int main(void) {
 	
 	int16_t	slope_std = 0;
 	int16_t	slope_real = 0;
+	
+	statInfo_t xTraStats;
+	uint16_t	dist;
 		
 	// Interrupts aktivieren
 	sei();
@@ -685,6 +721,20 @@ int main(void) {
    				mode = MODE_OFF;
    			}
    		}
+   		
+   			readRangeSingleMillimeters( &xTraStats );	// blocks until measurement is finished
+//				dist = readRangeSingleMillimeters( 0 );	// blocks until measurement is finished
+//				printf("Dist: %i mm\n", dist);
+
+				printf("Status     %x\n", xTraStats.rangeStatus);
+				printf("Dist:      %u mm\n", xTraStats.rawDistance);
+				printf("SigCount:  %u MCPS\n", xTraStats.signalCnt);
+				printf("AmbiCount: %u MCPS\n", xTraStats.ambientCnt);
+				printf("SpadCount: %u\n", xTraStats.spadCnt);
+				if ( timeoutOccurred() ) {
+					printf("!!! Timeout !!!\n");
+				}
+   		
 		}
 		else if(interval != last_interval) {
 			// In jedem Interval 1x die Temperatur abrufen
@@ -694,7 +744,11 @@ int main(void) {
 	   		count++;
    			// Messwerte für den Mittelwert aufsummieren
    			temp_sum += get_temperature(ADR_T_OBJ1);
+   			
    		}
+   		//_delay_ms(100);
+			//printf("Test: %X\n", readReg(0xC1));
+			//_delay_ms(100);
    	}
 
 		// Je nach Mode Relais und LEDs setzen
@@ -723,7 +777,25 @@ int main(void) {
 		default:
 			mode = MODE_OFF;
 		}
+//		readRangeSingleMillimeters( &xTraStats );	// blocks until measurement is finished
+/*
+		printf("Status %x\n", xTraStats.rangeStatus);
+		printf("Dist: %i mm\n", xTraStats.rawDistance);
+		printf("SigCount: %i MCPS", xTraStats.signalCnt);
+		printf("AmbiCount: %i MCPS", xTraStats.ambientCnt);
+		printf("SpadCount: %i", xTraStats.spadCnt);
+		if ( timeoutOccurred() ) {
+			printf("!!! Timeout !!!\n");
+		}
 		
+/*		
+	  	debug_str(   "\n\nstatus  = ");		debug_hex( xTraStats.rangeStatus, 1 );	
+	  	debug_str(     "\ndist    = ");		debug_dec( xTraStats.rawDistance );	 	
+	  	debug_str(  " mm\nsignCnt = ");		debug_dec_fix( xTraStats.signalCnt,  7 );		
+	  	debug_str(" MCPS\nambiCnt = ");		debug_dec_fix( xTraStats.ambientCnt, 7 );		
+	  	debug_str(" MCPS\nspadCnt = ");		debug_dec_fix( xTraStats.spadCnt,    8 );		
+	  	if ( timeoutOccurred() ) {			debug_str(" !!! Timeout !!! \n");		}		
+*/		
 		_delay_ms(100);		
    }
 }
